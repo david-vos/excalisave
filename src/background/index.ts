@@ -9,8 +9,8 @@ import { IDrawing } from "../interfaces/drawing.interface";
 import { XLogger } from "../lib/logger";
 import { TabUtils } from "../lib/utils/tab.utils";
 import { RandomUtils } from "../lib/utils/random.utils";
-import { DrawingStore } from "../lib/drawing-store";
-import { useCurrentDrawingId } from "../Popup/hooks/useCurrentDrawing.hook";
+import { MicrosoftApiService } from "../lib/microsoft-api.service";
+import { MicrosoftAuthService } from "../lib/microsoft-auth.service";
 
 browser.runtime.onInstalled.addListener(async () => {
   XLogger.log("onInstalled...");
@@ -23,54 +23,39 @@ browser.runtime.onInstalled.addListener(async () => {
       });
     }
   }
+
+  // Load OneDrive files if authenticated
+  try {
+    await MicrosoftApiService.initialize();
+    if (MicrosoftAuthService.accessToken) {
+      await MicrosoftApiService.syncOneDriveFiles();
+    }
+  } catch (error) {
+    XLogger.error("Error loading OneDrive files on install", error);
+  }
 });
 
 browser.runtime.onMessage.addListener(
   async (
-    message: SaveDrawingMessage | SaveNewDrawingMessage | CleanupFilesMessage | any,
+    message:
+      | SaveDrawingMessage
+      | SaveNewDrawingMessage
+      | CleanupFilesMessage
+      | any,
     _sender: any
   ) => {
     try {
-      XLogger.log("Mesage brackground", message);
+      XLogger.log("Message background", message);
       if (!message || !message.type) return;
 
       switch (message.type) {
         case MessageType.SAVE_NEW_DRAWING:
-          await browser.storage.local.set({
-            [message.payload.id]: {
-              id: message.payload.id,
-              name: message.payload.name,
-              createdAt: new Date().toISOString(),
-              imageBase64: message.payload.imageBase64,
-              viewBackgroundColor: message.payload.viewBackgroundColor,
-              data: {
-                excalidraw: message.payload.excalidraw,
-                excalidrawState: message.payload.excalidrawState,
-                versionFiles: message.payload.versionFiles,
-                versionDataState: message.payload.versionDataState,
-              },
-            },
-          });
-          break;
-
-        case MessageType.SAVE_DRAWING:
-          const exitentDrawing = (
-            await browser.storage.local.get(message.payload.id)
-          )[message.payload.id] as IDrawing;
-
-          if (!exitentDrawing) {
-            XLogger.error("No drawing found with id", message.payload.id);
-            return;
-          }
-
-          const newData: IDrawing = {
-            ...exitentDrawing,
-            name: message.payload.name || exitentDrawing.name,
-            imageBase64:
-              message.payload.imageBase64 || exitentDrawing.imageBase64,
-            viewBackgroundColor:
-              message.payload.viewBackgroundColor ||
-              exitentDrawing.viewBackgroundColor,
+          const newDrawing = {
+            id: message.payload.id,
+            name: message.payload.name,
+            createdAt: new Date().toISOString(),
+            imageBase64: message.payload.imageBase64,
+            viewBackgroundColor: message.payload.viewBackgroundColor,
             data: {
               excalidraw: message.payload.excalidraw,
               excalidrawState: message.payload.excalidrawState,
@@ -79,9 +64,58 @@ browser.runtime.onMessage.addListener(
             },
           };
 
+          // Save to browser storage
           await browser.storage.local.set({
-            [message.payload.id]: newData,
+            [message.payload.id]: newDrawing,
           });
+
+          // Save to Microsoft OneDrive
+          try {
+            await MicrosoftApiService.saveDrawing(newDrawing);
+          } catch (error) {
+            XLogger.error("Failed to save to Microsoft OneDrive", error);
+            // Continue execution even if Microsoft save fails
+          }
+          break;
+
+        case MessageType.SAVE_DRAWING:
+          const existentDrawing = (
+            await browser.storage.local.get(message.payload.id)
+          )[message.payload.id] as IDrawing;
+
+          if (!existentDrawing) {
+            XLogger.error("No drawing found with id", message.payload.id);
+            return;
+          }
+
+          const updatedDrawing: IDrawing = {
+            ...existentDrawing,
+            name: message.payload.name || existentDrawing.name,
+            imageBase64:
+              message.payload.imageBase64 || existentDrawing.imageBase64,
+            viewBackgroundColor:
+              message.payload.viewBackgroundColor ||
+              existentDrawing.viewBackgroundColor,
+            data: {
+              excalidraw: message.payload.excalidraw,
+              excalidrawState: message.payload.excalidrawState,
+              versionFiles: message.payload.versionFiles,
+              versionDataState: message.payload.versionDataState,
+            },
+          };
+
+          // Update in browser storage
+          await browser.storage.local.set({
+            [message.payload.id]: updatedDrawing,
+          });
+
+          // Update in Microsoft OneDrive
+          try {
+            await MicrosoftApiService.updateDrawing(updatedDrawing);
+          } catch (error) {
+            XLogger.error("Failed to update in Microsoft OneDrive", error);
+            // Continue execution even if Microsoft update fails
+          }
           break;
 
         case MessageType.CLEANUP_FILES:

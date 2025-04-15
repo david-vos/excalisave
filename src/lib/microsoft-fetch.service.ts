@@ -2,7 +2,6 @@ import { XLogger } from "./logger";
 
 export class MicrosoftFetchService {
   private static readonly API_BASE_URL = "https://graph.microsoft.com/v1.0";
-  private static readonly SYNC_FOLDER_NAME = "ExcaliSave";
 
   /**
    * Makes an authenticated request to the Microsoft Graph API
@@ -12,11 +11,10 @@ export class MicrosoftFetchService {
     options: RequestInit = {},
     accessToken: string
   ): Promise<Response> {
-    const url = endpoint.startsWith("http")
-      ? endpoint
-      : `${this.API_BASE_URL}${
-          endpoint.startsWith("/") ? endpoint : `/${endpoint}`
-        }`;
+    // Construct the full URL - all endpoints are relative to the base URL
+    const url = `${this.API_BASE_URL}${
+      endpoint.startsWith("/") ? endpoint : `/${endpoint}`
+    }`;
 
     const headers = {
       Authorization: `Bearer ${accessToken}`,

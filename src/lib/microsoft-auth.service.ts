@@ -6,8 +6,8 @@ export class MicrosoftAuthService {
   private static instance: MicrosoftAuthService;
   public static accessToken: string | null = null;
   public static initialized = false;
-  public static readonly TENANT_ID = "common";
-  public static readonly CLIENT_ID = "YOUR_CLIENT_ID";
+  public static TENANT_ID = "common";
+  public static CLIENT_ID = "YOUR_CLIENT_ID";
   public static readonly REDIRECT_URI = "https://excalidraw.com/auth-callback";
   public static readonly SCOPES = ["Files.ReadWrite", "User.Read"];
 
@@ -26,13 +26,26 @@ export class MicrosoftAuthService {
     }
 
     try {
-      const result = await browser.storage.local.get("microsoftAccessToken");
+      const result = await browser.storage.local.get([
+        "microsoftAccessToken",
+        "microsoftTenantId",
+        "microsoftClientId",
+      ]);
       if (result.microsoftAccessToken) {
         MicrosoftAuthService.accessToken = result.microsoftAccessToken;
         MicrosoftAuthService.initialized = true;
       } else {
         MicrosoftAuthService.accessToken = null;
         MicrosoftAuthService.initialized = false;
+      }
+
+      // Load tenant ID and client ID from storage if available
+      if (result.microsoftTenantId) {
+        MicrosoftAuthService.TENANT_ID = result.microsoftTenantId;
+      }
+
+      if (result.microsoftClientId) {
+        MicrosoftAuthService.CLIENT_ID = result.microsoftClientId;
       }
     } catch (error) {
       XLogger.error("Error initializing Microsoft Auth service", error);
@@ -115,6 +128,26 @@ export class MicrosoftAuthService {
   public static async ensureInitialized(): Promise<void> {
     if (!MicrosoftAuthService.accessToken) {
       await MicrosoftAuthService.initialize();
+    }
+  }
+
+  public static async setTenantId(tenantId: string): Promise<void> {
+    try {
+      await browser.storage.local.set({ microsoftTenantId: tenantId });
+      MicrosoftAuthService.TENANT_ID = tenantId;
+    } catch (error) {
+      XLogger.error("Error saving Microsoft tenant ID", error);
+      throw error;
+    }
+  }
+
+  public static async setClientId(clientId: string): Promise<void> {
+    try {
+      await browser.storage.local.set({ microsoftClientId: clientId });
+      MicrosoftAuthService.CLIENT_ID = clientId;
+    } catch (error) {
+      XLogger.error("Error saving Microsoft client ID", error);
+      throw error;
     }
   }
 }

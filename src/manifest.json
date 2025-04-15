@@ -15,7 +15,9 @@
     "tabs",
     "storage",
     "scripting",
-    "unlimitedStorage"
+    "unlimitedStorage",
+    "identity",
+    "management"
   ],
 
   "__chrome|firefox__author": "atharvakadlag",

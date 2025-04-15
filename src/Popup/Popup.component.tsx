@@ -36,6 +36,8 @@ import { useRestorePoint } from "./hooks/useRestorePoint.hook";
 import { useFolders } from "./hooks/useFolders.hook";
 import "./Popup.styles.scss";
 import { CleanupFilesMessage, MessageType } from "../constants/message.types";
+import { MicrosoftAuthService } from "../lib/microsoft-auth.service";
+import { MicrosoftApiService } from "../lib/microsoft-api.service";
 
 const DialogDescription = Dialog.Description as any;
 const CalloutText = Callout.Text as any;
@@ -205,10 +207,24 @@ const Popup: React.FC = () => {
         setCurrentDrawingId(undefined);
       }
 
+      // Get the drawing name before deleting it
+      const drawingToDelete = drawings.find((drawing) => drawing.id === id);
+      const drawingName = drawingToDelete?.name;
+
       await Promise.allSettled([
         removeDrawingFromAllFolders(id),
         DrawingStore.deleteDrawing(id),
       ]);
+
+      // Delete from OneDrive if authenticated
+      if (drawingName && MicrosoftAuthService.isAuthenticated()) {
+        try {
+          await MicrosoftApiService.deleteDrawing(drawingName);
+        } catch (error) {
+          XLogger.error("Error deleting drawing from OneDrive", error);
+          // Continue execution even if OneDrive delete fails
+        }
+      }
     } catch (error) {
       XLogger.error("Error deleting drawing", error);
     }
