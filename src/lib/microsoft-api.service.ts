@@ -41,6 +41,8 @@ export class MicrosoftApiService {
 
   private static async ensureSyncFolderExists(): Promise<string> {
     try {
+      await MicrosoftAuthService.ensureInitialized();
+
       if (!MicrosoftAuthService.accessToken) {
         throw new Error("Access token is required");
       }
@@ -68,8 +70,14 @@ export class MicrosoftApiService {
     }
   }
 
+  /**
+   * Gets all drawings from OneDrive without storing them in local storage
+   * @returns Array of drawings from OneDrive
+   */
   private static async getOneDriveFiles(): Promise<IDrawing[]> {
     try {
+      await MicrosoftAuthService.ensureInitialized();
+
       if (!MicrosoftAuthService.accessToken) {
         throw new Error("Access token is required");
       }
@@ -160,6 +168,48 @@ export class MicrosoftApiService {
       await browser.storage.local.set({ folders: folders.folders });
     } catch (error) {
       XLogger.error("Error syncing OneDrive files", error);
+      throw error;
+    }
+  }
+
+  /**
+   * Compares a local Excalidraw file with its OneDrive version
+   * @param drawingId The ID of the drawing to compare
+   * @returns An object containing both the local and OneDrive versions of the file
+   */
+  public static async getCompareFiles(drawingId: string): Promise<{
+    localFile: IDrawing;
+    oneDriveFile: IDrawing;
+  }> {
+    try {
+      const localFile: IDrawing =
+        (await browser.storage.local.get(drawingId))[drawingId] ||
+        (() => {
+          throw new Error("Local file not found");
+        })();
+
+      const oneDriveFile: IDrawing | null =
+        (await MicrosoftApiService.getOneDriveFiles()).find(
+          (d) => d.id === drawingId
+        ) ||
+        (() => {
+          throw new Error("OneDrive file not found");
+        })();
+
+      // no need to merge because local file is is newer. This means that the local file is the latest version
+      if (localFile.data.versionFiles != oneDriveFile.data.versionFiles) {
+        return {
+          localFile: null,
+          oneDriveFile: null,
+        };
+      }
+
+      return {
+        localFile,
+        oneDriveFile,
+      };
+    } catch (error) {
+      XLogger.error("Error comparing files", error);
       throw error;
     }
   }
