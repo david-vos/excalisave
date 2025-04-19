@@ -1,5 +1,8 @@
-import { XLogger } from "./logger";
+import { XLogger } from "../../../../lib/logger";
 
+/**
+ * Service for making API calls to Microsoft Graph API
+ */
 export class MicrosoftFetchService {
   private static readonly API_BASE_URL = "https://graph.microsoft.com/v1.0";
 
@@ -16,6 +19,9 @@ export class MicrosoftFetchService {
       endpoint.startsWith("/") ? endpoint : `/${endpoint}`
     }`;
 
+    XLogger.info(`Making request to Microsoft API: ${url}`);
+    XLogger.info(`Request method: ${options.method || "GET"}`);
+
     const headers = {
       Authorization: `Bearer ${accessToken}`,
       "Content-Type": "application/json",
@@ -28,8 +34,18 @@ export class MicrosoftFetchService {
         headers,
       });
 
+      XLogger.info(
+        `Response status: ${response.status} ${response.statusText}`
+      );
+
       if (!response.ok) {
-        throw new Error(`Microsoft API request failed: ${response.statusText}`);
+        const errorText = await response.text();
+        XLogger.error(
+          `Microsoft API request failed: ${response.statusText} - ${errorText}`
+        );
+        throw new Error(
+          `Microsoft API request failed: ${response.statusText} - ${errorText}`
+        );
       }
 
       return response;
@@ -46,12 +62,26 @@ export class MicrosoftFetchService {
     fileId: string,
     accessToken: string
   ): Promise<any> {
+    XLogger.info(`Getting content for file with ID: ${fileId}`);
     const response = await this.fetch(
       `/me/drive/items/${fileId}/content`,
       {},
       accessToken
     );
-    return response.json();
+
+    XLogger.info(`Retrieved content for file with ID: ${fileId}`);
+    // Since we know we're dealing with JSON files, we can parse the text content
+    const text = await response.text();
+    XLogger.info(`Parsed text content for file with ID: ${fileId}`);
+
+    try {
+      const json = JSON.parse(text);
+      XLogger.info(`Successfully parsed JSON for file with ID: ${fileId}`);
+      return json;
+    } catch (error) {
+      XLogger.error(`Error parsing JSON for file with ID: ${fileId}`, error);
+      throw error;
+    }
   }
 
   /**
@@ -121,57 +151,17 @@ export class MicrosoftFetchService {
     fileName: string,
     accessToken: string
   ): Promise<Response> {
-    return this.fetch(
+    XLogger.info(`Deleting file from OneDrive: ${folderName}/${fileName}`);
+    const response = await this.fetch(
       `/me/drive/root:/${folderName}/${fileName}`,
       {
         method: "DELETE",
       },
       accessToken
     );
-  }
-
-  /**
-   * Exchanges an authorization code for an access token
-   */
-  public static async exchangeCodeForToken(
-    code: string,
-    redirectUri: string,
-    codeVerifier: string,
-    clientId: string,
-    tenantId: string = "consumers"
-  ): Promise<string> {
-    try {
-      const response = await fetch(
-        `https://login.microsoftonline.com/${tenantId}/oauth2/v2.0/token`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/x-www-form-urlencoded",
-          },
-          body: new URLSearchParams({
-            client_id: clientId,
-            code: code,
-            redirect_uri: redirectUri,
-            grant_type: "authorization_code",
-            code_verifier: codeVerifier,
-          }),
-        }
-      );
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(
-          `Failed to exchange code for token: ${
-            errorData.error_description || response.statusText
-          }`
-        );
-      }
-
-      const data = await response.json();
-      return data.access_token;
-    } catch (error) {
-      XLogger.error("Error exchanging code for token", error);
-      throw error;
-    }
+    XLogger.info(
+      `Delete file response status: ${response.status} ${response.statusText}`
+    );
+    return response;
   }
 }

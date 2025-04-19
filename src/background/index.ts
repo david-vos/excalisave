@@ -9,11 +9,15 @@ import { IDrawing } from "../interfaces/drawing.interface";
 import { XLogger } from "../lib/logger";
 import { TabUtils } from "../lib/utils/tab.utils";
 import { RandomUtils } from "../lib/utils/random.utils";
-import { MicrosoftApiService } from "../lib/microsoft-api.service";
-import { MicrosoftAuthService } from "../lib/microsoft-auth.service";
+import { SyncService } from "../services/sync";
+import { MicrosoftProvider } from "../services/sync/providers/microsoft";
+
+// Initialize sync service with Microsoft provider
+const syncService = SyncService.getInstance();
+syncService.setProvider(MicrosoftProvider.getInstance());
 
 browser.runtime.onInstalled.addListener(async () => {
-  XLogger.log("onInstalled...");
+  XLogger.info("Extension installed or updated");
 
   for (const cs of (browser.runtime.getManifest() as any).content_scripts) {
     for (const tab of await browser.tabs.query({ url: cs.matches })) {
@@ -24,14 +28,15 @@ browser.runtime.onInstalled.addListener(async () => {
     }
   }
 
-  // Load OneDrive files if authenticated
+  // Initialize sync service
   try {
-    await MicrosoftApiService.initialize();
-    if (MicrosoftAuthService.accessToken) {
-      await MicrosoftApiService.syncOneDriveFiles();
-    }
+    await syncService.initialize();
   } catch (error) {
-    XLogger.error("Error loading OneDrive files on install", error);
+    XLogger.error(
+      `Error initializing sync service: ${
+        error instanceof Error ? error.message : String(error)
+      }`
+    );
   }
 });
 
@@ -45,7 +50,9 @@ browser.runtime.onMessage.addListener(
     _sender: any
   ) => {
     try {
-      XLogger.log("Message background", message);
+      XLogger.info(
+        `Message received in background: ${message.type || "unknown"}`
+      );
       if (!message || !message.type) return;
 
       switch (message.type) {
@@ -69,12 +76,16 @@ browser.runtime.onMessage.addListener(
             [message.payload.id]: newDrawing,
           });
 
-          // Save to Microsoft OneDrive
+          // Save to cloud
           try {
-            await MicrosoftApiService.saveDrawing(newDrawing);
+            await syncService.saveDrawing(newDrawing);
           } catch (error) {
-            XLogger.error("Failed to save to Microsoft OneDrive", error);
-            // Continue execution even if Microsoft save fails
+            XLogger.error(
+              `Failed to save to cloud: ${
+                error instanceof Error ? error.message : String(error)
+              }`
+            );
+            // Continue execution even if cloud save fails
           }
           break;
 
@@ -84,7 +95,7 @@ browser.runtime.onMessage.addListener(
           )[message.payload.id] as IDrawing;
 
           if (!existentDrawing) {
-            XLogger.error("No drawing found with id", message.payload.id);
+            XLogger.error(`No drawing found with id: ${message.payload.id}`);
             return;
           }
 
@@ -109,12 +120,16 @@ browser.runtime.onMessage.addListener(
             [message.payload.id]: updatedDrawing,
           });
 
-          // Update in Microsoft OneDrive
+          // Update in cloud
           try {
-            await MicrosoftApiService.updateDrawing(updatedDrawing);
+            await syncService.updateDrawing(updatedDrawing);
           } catch (error) {
-            XLogger.error("Failed to update in Microsoft OneDrive", error);
-            // Continue execution even if Microsoft update fails
+            XLogger.error(
+              `Failed to update in cloud: ${
+                error instanceof Error ? error.message : String(error)
+              }`
+            );
+            // Continue execution even if cloud update fails
           }
           break;
 
@@ -136,7 +151,7 @@ browser.runtime.onMessage.addListener(
 
           const uniqueImagesUsed = Array.from(new Set(imagesUsed));
 
-          XLogger.log("Used fileIds", uniqueImagesUsed);
+          XLogger.info(`Used fileIds: ${uniqueImagesUsed.length}`);
 
           // This workaround is to pass params to script, it's ugly but it works
           await browser.scripting.executeScript({
@@ -159,7 +174,7 @@ browser.runtime.onMessage.addListener(
         case "MessageAutoSave":
           const name = message.payload.name;
           const setCurrent = message.payload.setCurrent;
-          XLogger.log("Saving new drawing", { name });
+          XLogger.info(`Saving new drawing: ${name}`);
           const activeTab = await TabUtils.getActiveTab();
 
           if (!activeTab) {
@@ -187,7 +202,11 @@ browser.runtime.onMessage.addListener(
           break;
       }
     } catch (error) {
-      XLogger.error("Error on background message listener", error);
+      XLogger.error(
+        `Error handling message: ${
+          error instanceof Error ? error.message : String(error)
+        }`
+      );
     }
   }
 );

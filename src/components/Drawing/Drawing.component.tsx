@@ -49,6 +49,7 @@ export function Drawing(props: DrawingProps) {
   };
 
   const handleDeleteDrawing = () => {
+    console.log("handleDeleteDrawing called for drawing:", props.drawing.id);
     setDeleteModalOpen(false);
     props.onDeleteDrawing?.(props.drawing.id);
   };

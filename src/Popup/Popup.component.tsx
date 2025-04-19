@@ -36,8 +36,9 @@ import { useRestorePoint } from "./hooks/useRestorePoint.hook";
 import { useFolders } from "./hooks/useFolders.hook";
 import "./Popup.styles.scss";
 import { CleanupFilesMessage, MessageType } from "../constants/message.types";
-import { MicrosoftAuthService } from "../lib/microsoft-auth.service";
-import { MicrosoftApiService } from "../lib/microsoft-api.service";
+import { MicrosoftAuthService } from "../services/sync/providers/microsoft";
+import { SyncConflictDialog } from "../components/SyncConflictDialog/SyncConflictDialog.component";
+import { SyncService } from "../services/sync";
 
 const DialogDescription = Dialog.Description as any;
 const CalloutText = Callout.Text as any;
@@ -69,6 +70,11 @@ const Popup: React.FC = () => {
   const { loading, startLoading } = useDrawingLoading();
   const [isConfirmSwitchDialogOpen, setIsConfirmSwitchDialogOpen] =
     useState<boolean>(false);
+  const [syncConflict, setSyncConflict] = useState<{
+    drawingId: string;
+    localDrawing: IDrawing;
+    oneDriveDrawing: IDrawing;
+  } | null>(null);
 
   useEffect(() => {
     getRestorePoint()
@@ -171,6 +177,19 @@ const Popup: React.FC = () => {
     });
   }, [searchTerm, sidebarSelected]);
 
+  useEffect(() => {
+    const handleSyncConflict = (message: any) => {
+      if (message.type === "MICROSOFT_SYNC_CONFLICT") {
+        setSyncConflict(message.payload);
+      }
+    };
+
+    browser.runtime.onMessage.addListener(handleSyncConflict);
+    return () => {
+      browser.runtime.onMessage.removeListener(handleSyncConflict);
+    };
+  }, []);
+
   const onRenameDrawing = async (id: string, newName: string) => {
     try {
       const newDrawing = drawings.map((drawing) => {
@@ -198,7 +217,9 @@ const Popup: React.FC = () => {
   };
 
   const onDeleteDrawing = async (id: string) => {
+    console.log("onDeleteDrawing called with id:", id);
     try {
+      XLogger.info(`Starting delete process for drawing with ID: ${id}`);
       const newDrawing = drawings.filter((drawing) => drawing.id !== id);
 
       setDrawings(newDrawing);
@@ -210,20 +231,32 @@ const Popup: React.FC = () => {
       // Get the drawing name before deleting it
       const drawingToDelete = drawings.find((drawing) => drawing.id === id);
       const drawingName = drawingToDelete?.name;
+      XLogger.info(`Drawing to delete: ${drawingName} (ID: ${id})`);
 
       await Promise.allSettled([
         removeDrawingFromAllFolders(id),
         DrawingStore.deleteDrawing(id),
       ]);
+      XLogger.info(`Drawing removed from local storage: ${drawingName}`);
 
-      // Delete from OneDrive if authenticated
-      if (drawingName && MicrosoftAuthService.isAuthenticated()) {
+      // Delete from cloud if authenticated
+      if (drawingName && (await SyncService.getInstance().isAuthenticated())) {
+        XLogger.info(
+          `User is authenticated, attempting to delete from cloud: ${drawingName}`
+        );
         try {
-          await MicrosoftApiService.deleteDrawing(drawingName);
+          await SyncService.getInstance().deleteDrawing(drawingName);
+          XLogger.info(
+            `Drawing deleted from cloud successfully: ${drawingName}`
+          );
         } catch (error) {
-          XLogger.error("Error deleting drawing from OneDrive", error);
-          // Continue execution even if OneDrive delete fails
+          XLogger.error("Error deleting drawing from cloud", error);
+          // Continue execution even if cloud delete fails
         }
+      } else {
+        XLogger.info(
+          `User is not authenticated or drawing name is missing, skipping cloud delete`
+        );
       }
     } catch (error) {
       XLogger.error("Error deleting drawing", error);
@@ -353,6 +386,26 @@ const Popup: React.FC = () => {
         ))}
       </Grid>
     );
+  };
+
+  const handleResolveConflict = async (useLocal: boolean) => {
+    if (!syncConflict) return;
+
+    try {
+      if (useLocal) {
+        // Use local version
+        await SyncService.getInstance().saveDrawing(syncConflict.localDrawing);
+      } else {
+        // Use cloud version
+        await browser.storage.local.set({
+          [syncConflict.drawingId]: syncConflict.oneDriveDrawing,
+        });
+      }
+    } catch (error) {
+      XLogger.error("Error resolving sync conflict", error);
+    } finally {
+      setSyncConflict(null);
+    }
   };
 
   return (
@@ -553,6 +606,14 @@ const Popup: React.FC = () => {
             </Flex>
           </Dialog.Content>
         </Dialog.Root>
+
+        <SyncConflictDialog
+          isOpen={!!syncConflict}
+          onClose={() => setSyncConflict(null)}
+          localDrawing={syncConflict?.localDrawing!}
+          oneDriveDrawing={syncConflict?.oneDriveDrawing!}
+          onResolve={handleResolveConflict}
+        />
       </section>
     </Theme>
   );
