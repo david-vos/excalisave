@@ -39,6 +39,7 @@ import { CleanupFilesMessage, MessageType } from "../constants/message.types";
 import { MicrosoftAuthService } from "../services/sync/providers/microsoft";
 import { SyncConflictDialog } from "../components/SyncConflictDialog/SyncConflictDialog.component";
 import { SyncService } from "../services/sync";
+import { DeltaSyncService } from "../services/sync/delta-sync.service";
 
 const DialogDescription = Dialog.Description as any;
 const CalloutText = Callout.Text as any;
@@ -192,6 +193,14 @@ const Popup: React.FC = () => {
 
   const onRenameDrawing = async (id: string, newName: string) => {
     try {
+      // Get the old drawing before updating it
+      const oldDrawing = drawings.find((drawing) => drawing.id === id);
+      if (!oldDrawing) {
+        throw new Error("Drawing not found");
+      }
+      const oldName = oldDrawing.name;
+
+      // Update the drawing in memory and local storage
       const newDrawing = drawings.map((drawing) => {
         if (drawing.id === id) {
           return {
@@ -199,18 +208,30 @@ const Popup: React.FC = () => {
             name: newName,
           };
         }
-
         return drawing;
       });
 
       setDrawings(newDrawing);
 
+      const updatedDrawing = {
+        ...oldDrawing,
+        name: newName,
+      };
+
       await browser.storage.local.set({
-        [id]: {
-          ...drawings.find((drawing) => drawing.id === id),
-          name: newName,
-        },
+        [id]: updatedDrawing,
       });
+
+      // Update in OneDrive
+      try {
+        // First save with the new name
+        await SyncService.getInstance().updateDrawing(updatedDrawing);
+
+        // Then delete the old file
+        await SyncService.getInstance().deleteDrawing(oldName);
+      } catch (error) {
+        XLogger.error("Error updating drawing in OneDrive", error);
+      }
     } catch (error) {
       XLogger.error("Error renaming drawing", error);
     }
@@ -239,24 +260,15 @@ const Popup: React.FC = () => {
       ]);
       XLogger.info(`Drawing removed from local storage: ${drawingName}`);
 
-      // Delete from cloud if authenticated
-      if (drawingName && (await SyncService.getInstance().isAuthenticated())) {
-        XLogger.info(
-          `User is authenticated, attempting to delete from cloud: ${drawingName}`
-        );
-        try {
-          await SyncService.getInstance().deleteDrawing(drawingName);
-          XLogger.info(
-            `Drawing deleted from cloud successfully: ${drawingName}`
-          );
-        } catch (error) {
-          XLogger.error("Error deleting drawing from cloud", error);
-          // Continue execution even if cloud delete fails
-        }
-      } else {
-        XLogger.info(
-          `User is not authenticated or drawing name is missing, skipping cloud delete`
-        );
+      XLogger.info(
+        `User is authenticated, attempting to delete from cloud: ${drawingName}`
+      );
+      try {
+        await SyncService.getInstance().deleteDrawing(drawingName);
+        XLogger.info(`Drawing deleted from cloud successfully: ${drawingName}`);
+      } catch (error) {
+        XLogger.error("Error deleting drawing from cloud", error);
+        // Continue execution even if cloud delete fails
       }
     } catch (error) {
       XLogger.error("Error deleting drawing", error);
@@ -361,29 +373,38 @@ const Popup: React.FC = () => {
   const showDrawings = () => {
     return (
       <Grid columns="2" gapX="3" gapY="5" width="auto" pb="3" pt="3">
-        {filteredDrawings.map((drawing, index) => (
-          <Drawing
-            key={drawing.id}
-            index={index}
-            drawing={drawing}
-            folders={folders}
-            folderIdSelected={
-              sidebarSelected.startsWith("folder:")
-                ? sidebarSelected
-                : undefined
-            }
-            inExcalidrawPage={inExcalidrawPage}
-            favorite={favorites.includes(drawing.id)}
-            onClick={handleLoadItemWithConfirm}
-            isCurrent={currentDrawingId === drawing.id}
-            onRenameDrawing={onRenameDrawing}
-            onAddToFavorites={handleAddToFavorites}
-            onRemoveFromFavorites={handleRemoveFromFavorites}
-            onDeleteDrawing={onDeleteDrawing}
-            onAddToFolder={addDrawingToFolder}
-            onRemoveFromFolder={removeDrawingFromFolder}
-          />
-        ))}
+        {filteredDrawings.map((drawing, index) => {
+          const syncStatus = DeltaSyncService.getInstance().getSyncStatus(
+            drawing.id
+          );
+          return (
+            <Drawing
+              key={drawing.id}
+              index={index}
+              drawing={drawing}
+              folders={folders}
+              folderIdSelected={
+                sidebarSelected.startsWith("folder:")
+                  ? sidebarSelected
+                  : undefined
+              }
+              inExcalidrawPage={inExcalidrawPage}
+              favorite={favorites.includes(drawing.id)}
+              onClick={handleLoadItemWithConfirm}
+              isCurrent={currentDrawingId === drawing.id}
+              onRenameDrawing={onRenameDrawing}
+              onAddToFavorites={handleAddToFavorites}
+              onRemoveFromFavorites={handleRemoveFromFavorites}
+              onDeleteDrawing={onDeleteDrawing}
+              onAddToFolder={addDrawingToFolder}
+              onRemoveFromFolder={removeDrawingFromFolder}
+              syncStatus={syncStatus?.status}
+              lastSyncedAt={syncStatus?.lastSyncedAt}
+              syncProgress={syncStatus?.progress}
+              syncError={syncStatus?.error}
+            />
+          );
+        })}
       </Grid>
     );
   };
@@ -396,9 +417,54 @@ const Popup: React.FC = () => {
         // Use local version
         await SyncService.getInstance().saveDrawing(syncConflict.localDrawing);
       } else {
-        // Use cloud version
+        // Use cloud version but preserve local image data
+        const localDrawing = syncConflict.localDrawing;
+        const oneDriveDrawing = syncConflict.oneDriveDrawing;
+
+        // Parse the elements
+        const localElements = JSON.parse(localDrawing.data.excalidraw || "[]");
+        const oneDriveElements = JSON.parse(
+          oneDriveDrawing.data.excalidraw || "[]"
+        );
+
+        // Create maps for easier lookup
+        const localElementsMap = new Map(
+          localElements.map((el: any) => [el.id, el])
+        );
+
+        // Merge image data from local to OneDrive version
+        const mergedElements = oneDriveElements.map((el: any) => {
+          if (el.type === "image") {
+            const localImage = localElementsMap.get(el.id) as {
+              fileData?: string;
+              preview?: string;
+              thumbnail?: string;
+            };
+            if (localImage) {
+              // Preserve local image data
+              return {
+                ...el,
+                fileData: localImage.fileData,
+                preview: localImage.preview,
+                thumbnail: localImage.thumbnail,
+              };
+            }
+          }
+          return el;
+        });
+
+        // Create merged drawing
+        const mergedDrawing = {
+          ...oneDriveDrawing,
+          data: {
+            ...oneDriveDrawing.data,
+            excalidraw: JSON.stringify(mergedElements),
+          },
+        };
+
+        // Save merged version
         await browser.storage.local.set({
-          [syncConflict.drawingId]: syncConflict.oneDriveDrawing,
+          [syncConflict.drawingId]: mergedDrawing,
         });
       }
     } catch (error) {

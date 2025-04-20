@@ -14,6 +14,8 @@ import { IDrawing } from "../../interfaces/drawing.interface";
 import "./Drawing.styles.scss";
 import { AddToFolderModal } from "../AddToFolder/AddToFolder.component";
 import { Folder } from "../../interfaces/folder.interface";
+import { SyncStatusIndicator } from "../SyncStatusIndicator/SyncStatusIndicator.component";
+import { SyncStatus } from "../../interfaces/sync-status.interface";
 
 const DialogDescription = Dialog.Description as any;
 
@@ -34,6 +36,10 @@ type DrawingProps = {
 
   onAddToFolder: (drawingId: string, folderId: string) => void;
   onRemoveFromFolder: (drawingId: string, folderId: string) => void;
+  syncStatus?: SyncStatus;
+  lastSyncedAt?: Date;
+  syncProgress?: number;
+  syncError?: string;
 };
 
 export function Drawing(props: DrawingProps) {
@@ -57,21 +63,35 @@ export function Drawing(props: DrawingProps) {
   return (
     <Box className="Drawing">
       <Flex direction="column" gap="2" position={"relative"}>
-        <img
-          className="Drawing__image"
-          onClick={() => props.onClick(props.drawing.id)}
-          loading={props.index < 4 ? "eager" : "lazy"}
-          style={{
-            boxShadow: props.isCurrent ? "0px 0px 0px 2px #30a46c" : undefined,
-            position: "relative",
-            backgroundColor: props.drawing.viewBackgroundColor || "#fff",
-          }}
-          src={
-            props.drawing.imageBase64
-              ? props.drawing.imageBase64
-              : "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+ip1sAAAAASUVORK5CYII="
-          }
-        />
+        <Box position="relative">
+          <img
+            className="Drawing__image"
+            onClick={() => props.onClick(props.drawing.id)}
+            loading={props.index < 4 ? "eager" : "lazy"}
+            style={{
+              boxShadow: props.isCurrent
+                ? "0px 0px 0px 2px #30a46c"
+                : undefined,
+              position: "relative",
+              backgroundColor: props.drawing.viewBackgroundColor || "#fff",
+            }}
+            src={
+              props.drawing.imageBase64
+                ? props.drawing.imageBase64
+                : "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+ip1sAAAAASUVORK5CYII="
+            }
+          />
+          {props.syncStatus && (
+            <Box className="Drawing__sync-status">
+              <SyncStatusIndicator
+                status={props.syncStatus}
+                lastSyncedAt={props.lastSyncedAt}
+                progress={props.syncProgress}
+                error={props.syncError}
+              />
+            </Box>
+          )}
+        </Box>
 
         <Flex justify="between" align="center" pr="1" pl="1">
           <Text

@@ -16,6 +16,20 @@ import { MicrosoftProvider } from "../services/sync/providers/microsoft";
 const syncService = SyncService.getInstance();
 syncService.setProvider(MicrosoftProvider.getInstance());
 
+// Function to perform sync
+async function performSync() {
+  try {
+    XLogger.info("Performing periodic sync");
+    await syncService.syncFiles();
+    XLogger.info("Periodic sync completed");
+  } catch (error) {
+    XLogger.error("Error during periodic sync", error);
+  }
+}
+
+// Set up periodic sync every 1 minutes
+setInterval(performSync, 60 * 1000);
+
 browser.runtime.onInstalled.addListener(async () => {
   XLogger.info("Extension installed or updated");
 
@@ -28,9 +42,10 @@ browser.runtime.onInstalled.addListener(async () => {
     }
   }
 
-  // Initialize sync service
+  // Initialize sync service and perform initial sync
   try {
     await syncService.initialize();
+    await performSync();
   } catch (error) {
     XLogger.error(
       `Error initializing sync service: ${
@@ -61,6 +76,7 @@ browser.runtime.onMessage.addListener(
             id: message.payload.id,
             name: message.payload.name,
             createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
             imageBase64: message.payload.imageBase64,
             viewBackgroundColor: message.payload.viewBackgroundColor,
             data: {
@@ -68,6 +84,7 @@ browser.runtime.onMessage.addListener(
               excalidrawState: message.payload.excalidrawState,
               versionFiles: message.payload.versionFiles,
               versionDataState: message.payload.versionDataState,
+              elements: JSON.parse(message.payload.excalidraw || "[]"),
             },
           };
 
@@ -102,6 +119,7 @@ browser.runtime.onMessage.addListener(
           const updatedDrawing: IDrawing = {
             ...existentDrawing,
             name: message.payload.name || existentDrawing.name,
+            updatedAt: new Date().toISOString(),
             imageBase64:
               message.payload.imageBase64 || existentDrawing.imageBase64,
             viewBackgroundColor:
@@ -112,6 +130,7 @@ browser.runtime.onMessage.addListener(
               excalidrawState: message.payload.excalidrawState,
               versionFiles: message.payload.versionFiles,
               versionDataState: message.payload.versionDataState,
+              elements: JSON.parse(message.payload.excalidraw || "[]"),
             },
           };
 

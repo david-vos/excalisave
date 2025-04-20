@@ -23,17 +23,29 @@ export class MicrosoftAuthService {
     this.loadStoredValues();
   }
 
-  /**
-   * Set the tenant ID
-   */
+
+  public async getClientId(): Promise<string> {
+    if (this.clientId) {
+      return this.clientId;
+    }
+
+    await this.loadStoredValues();
+    return this.clientId || MicrosoftAuthService.CLIENT_ID;
+  }
+
+  public async getTenantId(): Promise<string> {
+    if (this.tenantId) {
+      return this.tenantId;
+    }
+
+    await this.loadStoredValues();
+    return this.tenantId || MicrosoftAuthService.TENANT_ID;
+  }
   public async setTenantId(tenantId: string): Promise<void> {
     this.tenantId = tenantId;
     await browser.storage.local.set({ microsoftTenantId: tenantId });
   }
 
-  /**
-   * Set the client ID
-   */
   public async setClientId(clientId: string): Promise<void> {
     this.clientId = clientId;
     await browser.storage.local.set({ microsoftClientId: clientId });
@@ -72,25 +84,16 @@ export class MicrosoftAuthService {
     return MicrosoftAuthService.instance;
   }
 
-  /**
-   * Save the access token
-   */
   public async saveAccessToken(token: string): Promise<void> {
     this.accessToken = token;
     await browser.storage.local.set({ microsoftAccessToken: token });
   }
 
-  /**
-   * Remove the access token
-   */
   public async removeAccessToken(): Promise<void> {
     this.accessToken = null;
     await browser.storage.local.remove("microsoftAccessToken");
   }
 
-  /**
-   * Check if the user is authenticated
-   */
   public async isAuthenticated(): Promise<boolean> {
     if (this.accessToken) {
       return true;
@@ -106,7 +109,7 @@ export class MicrosoftAuthService {
   }
 
   /**
-   * Get the access token
+   * Get the access token either from storage or from the live instance
    */
   public async getAccessToken(): Promise<string | null> {
     if (this.accessToken) {
@@ -120,30 +123,6 @@ export class MicrosoftAuthService {
     }
 
     return null;
-  }
-
-  /**
-   * Get the client ID
-   */
-  public async getClientId(): Promise<string> {
-    if (this.clientId) {
-      return this.clientId;
-    }
-
-    await this.loadStoredValues();
-    return this.clientId || MicrosoftAuthService.CLIENT_ID;
-  }
-
-  /**
-   * Get the tenant ID
-   */
-  public async getTenantId(): Promise<string> {
-    if (this.tenantId) {
-      return this.tenantId;
-    }
-
-    await this.loadStoredValues();
-    return this.tenantId || MicrosoftAuthService.TENANT_ID;
   }
 
   /**

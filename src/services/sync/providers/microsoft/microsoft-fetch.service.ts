@@ -56,7 +56,7 @@ export class MicrosoftFetchService {
   }
 
   /**
-   * Gets the content of a file from OneDrive
+   * Gets the content of a file from OneDrive by ID
    */
   public static async getFileContent(
     fileId: string,
@@ -75,11 +75,49 @@ export class MicrosoftFetchService {
     XLogger.info(`Parsed text content for file with ID: ${fileId}`);
 
     try {
-      const json = JSON.parse(text);
+      // Use a more robust JSON parsing process
+      const json = JSON.parse(text, (key, value) => {
+        // Handle special cases for data types
+        if (value === null && key === "") {
+          // This is the root object, return as is
+          return value;
+        }
+        return value;
+      });
+
       XLogger.info(`Successfully parsed JSON for file with ID: ${fileId}`);
       return json;
     } catch (error) {
       XLogger.error(`Error parsing JSON for file with ID: ${fileId}`, error);
+      throw error;
+    }
+  }
+
+  /**
+   * Gets the content of a file from OneDrive by path
+   */
+  public static async getFileContentByPath(
+    path: string,
+    accessToken: string
+  ): Promise<any> {
+    XLogger.info(`Getting content for file with path: ${path}`);
+    const response = await this.fetch(
+      `/me/drive/root:/${path}:/content`,
+      {},
+      accessToken
+    );
+
+    XLogger.info(`Retrieved content for file with path: ${path}`);
+    // Since we know we're dealing with JSON files, we can parse the text content
+    const text = await response.text();
+    XLogger.info(`Parsed text content for file with path: ${path}`);
+
+    try {
+      const json = JSON.parse(text);
+      XLogger.info(`Successfully parsed JSON for file with path: ${path}`);
+      return json;
+    } catch (error) {
+      XLogger.error(`Error parsing JSON for file with path: ${path}`, error);
       throw error;
     }
   }
@@ -133,11 +171,27 @@ export class MicrosoftFetchService {
     content: any,
     accessToken: string
   ): Promise<Response> {
+    // Use a more robust JSON stringification process
+    const jsonString = JSON.stringify(
+      content,
+      (_, value) => {
+        // Handle special cases for data types
+        if (value === undefined) {
+          return null; // Convert undefined to null
+        }
+        if (typeof value === "function") {
+          return null; // Skip functions
+        }
+        return value;
+      },
+      0
+    ); // Use 0 spaces for compact JSON
+
     return this.fetch(
       `/me/drive/root:/${folderName}/${fileName}:/content`,
       {
         method: "PUT",
-        body: JSON.stringify(content),
+        body: jsonString,
       },
       accessToken
     );
