@@ -45,6 +45,7 @@ import {
 } from "../constants/message.types";
 import { MergeConflictDialog } from "../components/MergeConflict/MergeConflict.component";
 import { SyncService } from "../services/sync.service";
+import { CustomDomainUtils } from "../lib/custom-domaints.utilts";
 import { searchDrawings } from "../services/search.service";
 
 const DialogDescription = Dialog.Description as any;
@@ -147,7 +148,7 @@ const Popup: React.FC = () => {
           XLogger.debug("Active tab", activeTab);
           if (
             !activeTab ||
-            !activeTab.url?.startsWith("https://excalidraw.com")
+            !(await CustomDomainUtils.isAnExcalidrawPage(activeTab))
           ) {
             XLogger.error(
               "Error loading drawing: No active tab or drawing found",
