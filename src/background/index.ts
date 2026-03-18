@@ -2,7 +2,7 @@ import { browser } from "webextension-polyfill-ts";
 import { BackgroundMessage, MessageType } from "../constants/message.types";
 import { IDrawing } from "../interfaces/drawing.interface";
 import { XLogger } from "../lib/logger";
-import { RandomUtils } from "../lib/utils/random.utils";
+import { IdUtils } from "../lib/utils/id.utils";
 import { TabUtils } from "../lib/utils/tab.utils";
 import { GitHubConfigService } from "../services/github/github-config.service";
 import { SyncService } from "../services/sync.service";
@@ -185,7 +185,7 @@ browser.runtime.onMessage.addListener(
 
           // doing this kind of breaks the auto syncing.
           // There should be a proper check to see if the file already exist as a stored file
-          const id = `drawing:${RandomUtils.generateRandomId()}`;
+          const id = IdUtils.createDrawingId();
 
           // This workaround is to pass params to script, it's ugly, but it works
           await browser.scripting.executeScript({

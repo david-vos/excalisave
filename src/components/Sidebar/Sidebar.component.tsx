@@ -15,13 +15,14 @@ import "./Sidebar.styles.scss";
 import { Placeholder } from "../Placeholder/Placeholder.component";
 import { browser } from "webextension-polyfill-ts";
 import { TabUtils } from "../../lib/utils/tab.utils";
+import type { UUID } from "../../lib/utils/id.utils";
 
 type SidebarProps = {
   onChangeSelected?: (selected: string) => void;
   folders: Folder[];
   onCreateFolder: (name: string) => void;
-  onRemoveFolder: (id: string) => void;
-  onRenameFolder: (id: string, name: string) => void;
+  onRemoveFolder: (id: UUID) => void;
+  onRenameFolder: (id: UUID, name: string) => void;
   selected: string;
 };
 

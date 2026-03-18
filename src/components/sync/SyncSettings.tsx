@@ -23,6 +23,7 @@ import {
 } from "../../constants/message.types";
 import { ChangeHistoryItem } from "../../interfaces/sync.interface";
 import { IDrawing } from "../../interfaces/drawing.interface";
+import type { UUID } from "../../lib/utils/id.utils";
 import "./SyncSettings.scss";
 
 interface SyncSettingsProps {
@@ -39,7 +40,7 @@ const SyncSettings: React.FC<SyncSettingsProps> = ({ onBack }) => {
   const [isLoadingCommits, setIsLoadingCommits] = useState(false);
   const [commitError, setCommitError] = useState<string>("");
   const [drawings, setDrawings] = useState<IDrawing[]>([]);
-  const [selectedDrawings, setSelectedDrawings] = useState<string[]>([]);
+  const [selectedDrawings, setSelectedDrawings] = useState<UUID[]>([]);
   const [isInitialized, setIsInitialized] = useState<boolean>(false);
 
   useEffect(() => {

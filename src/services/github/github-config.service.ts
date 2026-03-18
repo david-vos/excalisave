@@ -1,4 +1,5 @@
 import { XLogger } from "../../lib/logger";
+import type { UUID } from "../../lib/utils/id.utils";
 import { GitHubProvider } from "./github-provider.service";
 import { SyncService } from "../sync.service";
 
@@ -24,7 +25,7 @@ export class GitHubConfigService {
     token: string,
     repoOwner: string,
     repoName: string,
-    drawingsToSync?: string[]
+    drawingsToSync?: UUID[]
   ): Promise<{ success: boolean; error?: string }> {
     try {
       const githubProvider = new GitHubProvider();
