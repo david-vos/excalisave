@@ -1,5 +1,6 @@
 import { browser } from "webextension-polyfill-ts";
-import { RandomUtils } from "./utils/random.utils";
+import type { UUID } from "./utils/id.utils";
+import { IdUtils } from "./utils/id.utils";
 import { TabUtils } from "./utils/tab.utils";
 import { DRAWING_ID_KEY_LS, DRAWING_TITLE_KEY_LS } from "./constants";
 import { XLogger } from "./logger";
@@ -20,7 +21,7 @@ export class DrawingStore {
       return;
     }
 
-    const id = `drawing:${RandomUtils.generateRandomId()}`;
+    const id = IdUtils.createDrawingId();
 
     // This workaround is to pass params to script, it's ugly but it works
     await browser.scripting.executeScript({
@@ -37,7 +38,7 @@ export class DrawingStore {
     });
   }
 
-  static async loadDrawing(drawingId: string) {
+  static async loadDrawing(drawingId: UUID) {
     const activeTab = await TabUtils.getActiveTab();
 
     if (!activeTab) {
@@ -95,7 +96,7 @@ export class DrawingStore {
     });
   }
 
-  private static async deleteDrawingFromFavorites(id: string) {
+  private static async deleteDrawingFromFavorites(id: UUID) {
     const favorites =
       (await browser.storage.local.get("favorites"))["favorites"] || [];
     const newFavorites = favorites.filter((fav: string) => fav !== id);
@@ -103,7 +104,7 @@ export class DrawingStore {
     await browser.storage.local.set({ favorites: newFavorites });
   }
 
-  static async deleteDrawing(id: string) {
+  static async deleteDrawing(id: UUID) {
     await browser.storage.local.remove(id);
 
     const activeTab = await TabUtils.getActiveTab();

@@ -22,6 +22,8 @@ import { Folder } from "../../interfaces/folder.interface";
 
 const DialogDescription = Dialog.Description as any;
 
+import type { UUID } from "../../lib/utils/id.utils";
+
 type DrawingProps = {
   favorite?: boolean;
   index: number;
@@ -29,18 +31,18 @@ type DrawingProps = {
   inExcalidrawPage: boolean;
   drawing: IDrawing;
   folders: Folder[];
-  folderIdSelected?: string;
-  onClick: (id: string) => void;
-  onRenameDrawing?: (id: string, newName: string) => void;
-  onDeleteDrawing?: (id: string) => void;
+  folderIdSelected?: UUID;
+  onClick: (id: UUID) => void;
+  onRenameDrawing?: (id: UUID, newName: string) => void;
+  onDeleteDrawing?: (id: UUID) => void;
 
-  onAddToFavorites?: (id: string) => void;
-  onRemoveFromFavorites?: (id: string) => void;
+  onAddToFavorites?: (id: UUID) => void;
+  onRemoveFromFavorites?: (id: UUID) => void;
 
-  onAddToFolder: (drawingId: string, folderId: string) => void;
-  onRemoveFromFolder: (drawingId: string, folderId: string) => void;
+  onAddToFolder: (drawingId: UUID, folderId: UUID) => void;
+  onRemoveFromFolder: (drawingId: UUID, folderId: UUID) => void;
 
-  onToggleSync?: (id: string, sync: boolean) => void;
+  onToggleSync?: (id: UUID, sync: boolean) => void;
 };
 
 export function Drawing(props: DrawingProps) {

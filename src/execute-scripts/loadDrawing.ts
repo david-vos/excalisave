@@ -15,8 +15,10 @@ import { browser } from "webextension-polyfill-ts";
 // Where images are stored: https://github.com/excalidraw/excalidraw/blob/e8def8da8d5fcf9445aebdd996de3fee4cecf7ef/excalidraw-app/data/LocalData.ts#L24
 const filesStore = createStore("files-db", "files-store");
 
+import type { UUID } from "../lib/utils/id.utils";
+
 type ScriptParams = {
-  id: string;
+  id: UUID;
 };
 
 (async () => {
