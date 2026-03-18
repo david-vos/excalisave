@@ -221,13 +221,14 @@ const SyncSettings: React.FC<SyncSettingsProps> = ({ onBack }) => {
                 <Heading as="h1" size="7" mb="1">
                   Sync Settings
                 </Heading>
+                <Badge color="orange">Beta</Badge>
                 <Badge color={isInitialized ? "green" : "red"}>
                   {isInitialized ? "Initialized" : "Not Initialized"}
                 </Badge>
               </Flex>
               <Text size="2" as="p" color="gray">
-                Configure GitHub integration, manage synced files, and view
-                history.
+                Configure GitHub integration, manage synced files, and view history. This feature is still in beta — you
+                may encounter occasional bugs.
               </Text>
             </Box>
           </Flex>
