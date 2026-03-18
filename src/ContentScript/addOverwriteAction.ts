@@ -23,23 +23,23 @@ const addOverwriteAction = () => {
   const innerDiv = newAction.querySelector(
     "div.OverwriteConfirm__Actions__Action__content",
   ) as HTMLDivElement;
-  // change the text inside html div inside the button
+  // change the text inside the HTML div inside the button
   innerDiv.textContent = "Save the current drawing as an excalisave drawing.";
   // add overwriteconfirm_excalisave class to innerDiv
   innerDiv.classList.add("overwriteconfirm_excalisave");
 
   // get the button inside newAction
   const newButton = newAction.querySelector("button");
-  // change the text inside html div inside the button
+  // change the text inside the HTML div inside the button
   newButton.querySelector("div").textContent = "Save to excalisave.";
 
   // add click event listener
   newButton.addEventListener("click", () => {
-    // open extention popup and trigger onclick for save
+    // open the extention popup and trigger onclick for save
     // get name input from alert
     const name = prompt("Enter name for the new drawing");
 
-    // send MessageAutoSave message to background script
+    // send MessageAutoSave message to a background script
     browser.runtime.sendMessage({
       type: MessageType.MESSAGE_AUTO_SAVE,
       payload: {
@@ -48,11 +48,10 @@ const addOverwriteAction = () => {
       },
     });
 
-    var elem = document.querySelector(
+    const elem = document.querySelector<HTMLButtonElement>(
       "body > div.excalidraw.excalidraw-modal-container > div > div.Modal__content > div > div > div > div.OverwriteConfirm__Description.OverwriteConfirm__Description--color-danger > button",
-    ) as HTMLButtonElement;
-    // convert elem into button
-    elem.click();
+    );
+    elem?.click();
 
     browser.runtime.sendMessage({ type: MessageType.CLEAR_DRAWING_ID });
     XLogger.log("ClearDrawingID message sent");
@@ -68,7 +67,7 @@ const addOverwriteAction = () => {
 
   // add new class to div
   newDiv.classList.add("OverwriteConfirm__Actions__Action");
-  // add new div to overwriteActionsDiv at first position
+  // add a new div to overwriteActionsDiv at the first position
   overwriteActionsDiv.insertBefore(newDiv, overwriteActionsDiv.firstChild);
 };
 

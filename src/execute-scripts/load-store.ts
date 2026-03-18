@@ -5,7 +5,7 @@ import { XLogger } from "../lib/logger";
 import { browser } from "webextension-polyfill-ts";
 import { MessageType } from "../constants/message.types";
 
-// Were images are stored: https://github.com/excalidraw/excalidraw/blob/e8def8da8d5fcf9445aebdd996de3fee4cecf7ef/excalidraw-app/data/LocalData.ts#L24
+// Where images are stored: https://github.com/excalidraw/excalidraw/blob/e8def8da8d5fcf9445aebdd996de3fee4cecf7ef/excalidraw-app/data/LocalData.ts#L24
 const filesStore = createStore("files-db", "files-store");
 
 type ScriptParams = {
@@ -35,9 +35,11 @@ type ScriptParams = {
 
     const fileIds = Object.keys(files);
     for (const fileId of fileIds) {
-      const file = files[fileId];
-      // Update lastRetrieved date to avoid images being removed by cleanup process
-      file.lastRetrieved = new Date(2500, 0, 1).getTime();
+      // Clone and update lastRetrieved date to avoid images being removed by cleanup process
+      const file = {
+        ...files[fileId],
+        lastRetrieved: new Date(2500, 0, 1).getTime(),
+      };
 
       if (fileIdsToUpdate.includes(fileId)) {
         // Update if exists

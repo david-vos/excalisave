@@ -21,11 +21,12 @@ export class SyncService {
     return SyncService.instance;
   }
 
-  public setProvider(provider: SyncProvider): void {
+  public setProvider(provider: SyncProvider | null): void {
     this.provider = provider;
   }
 
   public async initialize(drawingsToSync: string[]): Promise<void> {
+    if (!this.provider) throw new Error("Sync provider not set");
     await this.provider.initialize();
     await this.syncFiles();
     for (const drawingId of drawingsToSync) {
@@ -40,12 +41,18 @@ export class SyncService {
 
     if (!drawing) return;
 
-    // We set these to null to avoid conflicts with the sync provider
-    drawing.sync = true;
-    drawing.data.versionDataState = null;
-    drawing.data.versionFiles = null;
+    // Clone and nullify version fields to avoid conflicts with the sync provider
+    const updatedDrawing: IDrawing = {
+      ...drawing,
+      sync: true,
+      data: {
+        ...drawing.data,
+        versionDataState: null,
+        versionFiles: null,
+      },
+    };
 
-    await browser.storage.local.set({ [drawingId]: drawing });
+    await browser.storage.local.set({ [drawingId]: updatedDrawing });
   }
 
   public async isAuthenticated(): Promise<boolean> {
@@ -68,13 +75,19 @@ export class SyncService {
     if (!drawing.sync) return { success: false };
     if (!(await this.isAuthenticated())) return { success: false };
 
-    // We set these to null to avoid conflicts with the sync provider
-    drawing.sync = true;
-    drawing.data.versionDataState = null;
-    drawing.data.versionFiles = null;
+    // Clone and nullify version fields to avoid conflicts with the sync provider
+    const drawingToSync: IDrawing = {
+      ...drawing,
+      sync: true,
+      data: {
+        ...drawing.data,
+        versionDataState: null,
+        versionFiles: null,
+      },
+    };
 
     // Attempt to update the drawing in the provider
-    const result = await this.provider.updateDrawing(drawing);
+    const result = await this.provider.updateDrawing(drawingToSync);
 
     // Handle boolean result (success/failure)
     if (typeof result === "boolean") {

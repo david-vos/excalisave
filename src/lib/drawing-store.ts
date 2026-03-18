@@ -160,7 +160,9 @@ export class DrawingStore {
       }
 
       return hasUnsaved;
-    } catch {}
+    } catch (error) {
+      XLogger.error("Error checking for unsaved changes", error);
+    }
 
     // By default, show confirmation dialog, we ensure the action is approved.
     return true;

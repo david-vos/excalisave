@@ -5,7 +5,7 @@ import { As } from "../lib/types.utils";
 import { waitForElement } from "../lib/utils/wait-for-element.util";
 import { getDrawingDataState } from "./content-script.utils";
 import { initExcalidrawClientUI } from "./excalidraw-client-ui";
-const { browser } = require("webextension-polyfill-ts");
+import { browser } from "webextension-polyfill-ts";
 
 // ----------- Content Script Cleanup --------------------
 const DESTRUCTION_EVENT = "destruct-my-extension_2_" + browser.runtime.id;
@@ -27,7 +27,7 @@ document.addEventListener(DESTRUCTION_EVENT, () => {
 });
 
 browser.runtime.connect().onDisconnect.addListener(function () {
-  XLogger.log("⛽️️️️️️️️️️️️️️️️p️RUntime disconnect");
+  XLogger.log("Runtime disconnected");
 });
 // -----------  Content Script Cleanup  --------------------
 

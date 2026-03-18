@@ -10,7 +10,7 @@ import { XLogger } from "../lib/logger";
 import { convertBlobToBase64Async } from "../lib/utils/blob-to-base64.util";
 import { calculateNewDimensions } from "../lib/utils/calculate-new-dimensions.util";
 
-// Were images are stored: https://github.com/excalidraw/excalidraw/blob/e8def8da8d5fcf9445aebdd996de3fee4cecf7ef/excalidraw-app/data/LocalData.ts#L24
+// Where images are stored: https://github.com/excalidraw/excalidraw/blob/e8def8da8d5fcf9445aebdd996de3fee4cecf7ef/excalidraw-app/data/LocalData.ts#L24
 const filesStore = createStore("files-db", "files-store");
 
 type GetDrawingDataStateProps = {
@@ -92,7 +92,7 @@ async function takeScreenshot({
   const imageBase64 = await convertBlobToBase64Async(blob);
 
   XLogger.log(
-    "📷 Take Screenshoot Took:",
+    "📷 Take Screenshot Took:",
     new Date().getTime() - startTime + "ms"
   );
 

@@ -128,7 +128,7 @@ export function FolderItem({
                 }
               }}
               value={newName}
-              placeholder="Rename drawing"
+              placeholder="Rename collection"
             />
           </Flex>
 

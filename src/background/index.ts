@@ -58,7 +58,7 @@ browser.runtime.onMessage.addListener(
           const drawing: IDrawing = {
             id: message.payload.id,
             name: message.payload.name,
-            sync: message.payload.sync || false,
+            sync: message.payload.sync ?? false,
             createdAt: new Date().toISOString(),
             imageBase64: message.payload.imageBase64,
             viewBackgroundColor: message.payload.viewBackgroundColor,
@@ -74,25 +74,25 @@ browser.runtime.onMessage.addListener(
           const saveResult = await syncService.updateDrawing(drawing);
           return { success: saveResult.success };
 
-        case MessageType.SAVE_DRAWING:
-          const exitentDrawing = (
+        case MessageType.SAVE_DRAWING: {
+          const existentDrawing = (
             await browser.storage.local.get(message.payload.id)
           )[message.payload.id] as IDrawing;
 
-          if (!exitentDrawing) {
+          if (!existentDrawing) {
             XLogger.error("No drawing found with id", message.payload.id);
             return { success: false, error: "No drawing found with id" };
           }
 
           const newData: IDrawing = {
-            ...exitentDrawing,
-            name: message.payload.name || exitentDrawing.name,
-            sync: message.payload.sync || exitentDrawing.sync,
+            ...existentDrawing,
+            name: message.payload.name ?? existentDrawing.name,
+            sync: message.payload.sync ?? existentDrawing.sync,
             imageBase64:
-              message.payload.imageBase64 || exitentDrawing.imageBase64,
+              message.payload.imageBase64 ?? existentDrawing.imageBase64,
             viewBackgroundColor:
-              message.payload.viewBackgroundColor ||
-              exitentDrawing.viewBackgroundColor,
+              message.payload.viewBackgroundColor ??
+              existentDrawing.viewBackgroundColor,
             data: {
               excalidraw: message.payload.excalidraw,
               excalidrawState: message.payload.excalidrawState,
@@ -107,6 +107,7 @@ browser.runtime.onMessage.addListener(
 
           const updateResult = await syncService.updateDrawing(newData);
           return { success: updateResult.success };
+        }
 
         case MessageType.SYNC_DRAWING:
           const drawingToSync = (

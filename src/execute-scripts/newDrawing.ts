@@ -1,9 +1,9 @@
-import { getDrawingDataState } from "../ContentScript/content-script.utils";
-import { MessageType, SaveDrawingMessage } from "../constants/message.types";
-import { DRAWING_ID_KEY_LS, DRAWING_TITLE_KEY_LS } from "../lib/constants";
-import { XLogger } from "../lib/logger";
-import { As } from "../lib/types.utils";
-const { browser } = require("webextension-polyfill-ts");
+import {getDrawingDataState} from "../ContentScript/content-script.utils";
+import {MessageType, SaveDrawingMessage} from "../constants/message.types";
+import {DRAWING_ID_KEY_LS, DRAWING_TITLE_KEY_LS} from "../lib/constants";
+import {XLogger} from "../lib/logger";
+import {As} from "../lib/types.utils";
+import {browser} from "webextension-polyfill-ts";
 
 (async () => {
   // Save data before load new drawing if there is a current drawing
@@ -33,8 +33,8 @@ const { browser } = require("webextension-polyfill-ts");
   async function clearByExcalidrawFromUI() {
     const style = document.createElement("style");
 
-    // Hide items to now show steps to user
-    const cssString = `
+    // Hide items to now show steps to the user
+      style.textContent = `
   .excalidraw .dropdown-menu-button {
     visibility: hidden !important;
   }
@@ -47,8 +47,6 @@ const { browser } = require("webextension-polyfill-ts");
     visibility: hidden !important;
   }
 `;
-
-    style.textContent = cssString;
     document.head.appendChild(style);
 
     const isLeftMenuOpen = !!document.querySelector(

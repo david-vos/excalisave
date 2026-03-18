@@ -9,7 +9,7 @@ import {
 } from "../constants/message.types";
 import { DRAWING_ID_KEY_LS, DRAWING_TITLE_KEY_LS } from "../lib/constants";
 import { setLocalStorageItemAndNotify } from "../lib/localStorage.utils";
-const { browser } = require("webextension-polyfill-ts");
+import { browser } from "webextension-polyfill-ts";
 
 type ScriptParams = {
   name: string;
