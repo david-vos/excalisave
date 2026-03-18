@@ -4,7 +4,6 @@ import {
   HeartIcon,
   ListBulletIcon,
   MagnifyingGlassIcon,
-  PlusCircledIcon,
 } from "@radix-ui/react-icons";
 import { Box, Flex, Separator, Text } from "@radix-ui/themes";
 import { clsx } from "clsx";
@@ -147,7 +146,7 @@ export function Sidebar({ folders, onCreateFolder, ...props }: SidebarProps) {
               <Text
                 as="div"
                 size="1"
-                className="Placeholder__emptyFolersMessage"
+                className="Placeholder__emptyFoldersMessage"
               >
                 Create a collection by clicking on plus icon to organize your
                 drawings

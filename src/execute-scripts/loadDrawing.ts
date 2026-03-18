@@ -4,15 +4,15 @@ import {
 } from "../ContentScript/content-script.utils";
 import { MessageType, SaveDrawingMessage } from "../constants/message.types";
 import { IDrawing } from "../interfaces/drawing.interface";
-import { createStore, entries, set, values } from "idb-keyval";
+import { createStore, entries, set } from "idb-keyval";
 import { DRAWING_ID_KEY_LS, DRAWING_TITLE_KEY_LS } from "../lib/constants";
 import { XLogger } from "../lib/logger";
 import { As } from "../lib/types.utils";
 import { FileId } from "@excalidraw/excalidraw/types/element/types";
 import { BinaryFileData } from "@excalidraw/excalidraw/types/types";
-const { browser } = require("webextension-polyfill-ts");
+import { browser } from "webextension-polyfill-ts";
 
-// Were images are stored: https://github.com/excalidraw/excalidraw/blob/e8def8da8d5fcf9445aebdd996de3fee4cecf7ef/excalidraw-app/data/LocalData.ts#L24
+// Where images are stored: https://github.com/excalidraw/excalidraw/blob/e8def8da8d5fcf9445aebdd996de3fee4cecf7ef/excalidraw-app/data/LocalData.ts#L24
 const filesStore = createStore("files-db", "files-store");
 
 type ScriptParams = {

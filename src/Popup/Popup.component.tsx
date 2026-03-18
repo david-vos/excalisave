@@ -45,14 +45,14 @@ import {
 } from "../constants/message.types";
 import { MergeConflictDialog } from "../components/MergeConflict/MergeConflict.component";
 import { SyncService } from "../services/sync.service";
-import { CustomDomainUtils } from "../lib/custom-domaints.utilts";
+import { CustomDomainUtils } from "../lib/custom-domains.utils";
 import { searchDrawings } from "../services/search.service";
 
 const DialogDescription = Dialog.Description as any;
 const CalloutText = Callout.Text as any;
 
 const Popup: React.FC = () => {
-  const [drawings, setDrawings] = React.useState<IDrawing[]>([]);
+  const [drawings, setDrawings] = useState<IDrawing[]>([]);
   const { favorites, addToFavorites, removeFromFavorites } = useFavorites();
   const {
     folders,
@@ -63,8 +63,8 @@ const Popup: React.FC = () => {
     removeDrawingFromFolder,
     removeDrawingFromAllFolders,
   } = useFolders();
-  const [searchTerm, setSearchTerm] = React.useState<string>("");
-  const searchInputRef = React.useRef<HTMLInputElement>(null);
+  const [searchTerm, setSearchTerm] = useState<string>("");
+  const searchInputRef = useRef<HTMLInputElement>(null);
   const {
     currentDrawingId,
     inExcalidrawPage,
@@ -219,12 +219,15 @@ const Popup: React.FC = () => {
       setDrawings(newDrawing);
 
       // Update local storage
-      await browser.storage.local.set({
-        [id]: {
-          ...drawings.find((drawing) => drawing.id === id),
-          name: newName,
-        },
-      });
+      const drawingToUpdate = drawings.find((drawing) => drawing.id === id);
+      if (drawingToUpdate) {
+        await browser.storage.local.set({
+          [id]: {
+            ...drawingToUpdate,
+            name: newName,
+          },
+        });
+      }
 
       // If this is the current drawing, update localStorage in the Excalidraw tab
       if (currentDrawingId === id && inExcalidrawPage) {
@@ -346,12 +349,15 @@ const Popup: React.FC = () => {
       setDrawings(newDrawing);
 
       // Update local storage
-      await browser.storage.local.set({
-        [drawingId]: {
-          ...drawings.find((drawing) => drawing.id === drawingId),
-          sync,
-        },
-      });
+      const drawingToUpdate = drawings.find((drawing) => drawing.id === drawingId);
+      if (drawingToUpdate) {
+        await browser.storage.local.set({
+          [drawingId]: {
+            ...drawingToUpdate,
+            sync,
+          },
+        });
+      }
 
       // If enabling sync, trigger an immediate sync
       if (sync) {
@@ -361,10 +367,7 @@ const Popup: React.FC = () => {
             id: drawingId,
           },
         } as SyncDrawingMessage);
-        return;
-      }
-
-      if (!sync) {
+      } else {
         await browser.runtime.sendMessage({
           type: MessageType.DELETE_DRAWING_SYNC,
           payload: {
@@ -395,7 +398,7 @@ const Popup: React.FC = () => {
   const filterDrawings = () => {
     // If we're in a folder view, filter by folder
     if (sidebarSelected?.startsWith("folder:")) {
-      const folder = folders.find((folder) => folder.id === sidebarSelected);
+      const folder = folders.find((f) => f.id === sidebarSelected);
       return folder
         ? drawings.filter((drawing) => folder.drawingIds.includes(drawing.id))
         : [];

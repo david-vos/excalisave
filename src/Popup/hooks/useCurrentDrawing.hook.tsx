@@ -3,7 +3,7 @@ import { Scripting, browser } from "webextension-polyfill-ts";
 import { TabUtils } from "../../lib/utils/tab.utils";
 import { DRAWING_ID_KEY_LS } from "../../lib/constants";
 import { XLogger } from "../../lib/logger";
-import { CustomDomainUtils } from "../../lib/custom-domaints.utilts";
+import { CustomDomainUtils } from "../../lib/custom-domains.utils";
 
 export function useCurrentDrawingId(): {
   currentDrawingId: string;

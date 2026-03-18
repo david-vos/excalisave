@@ -3,7 +3,7 @@ import { createStore, del, get, keys } from "idb-keyval";
 import { getScriptParams } from "../ContentScript/content-script.utils";
 import { XLogger } from "../lib/logger";
 
-// Were images are stored: https://github.com/excalidraw/excalidraw/blob/e8def8da8d5fcf9445aebdd996de3fee4cecf7ef/excalidraw-app/data/LocalData.ts#L24
+// Where images are stored: https://github.com/excalidraw/excalidraw/blob/e8def8da8d5fcf9445aebdd996de3fee4cecf7ef/excalidraw-app/data/LocalData.ts#L24
 const filesStore = createStore("files-db", "files-store");
 
 type ScriptParams = {
@@ -33,10 +33,10 @@ type ScriptParams = {
   const usedFileIds = params.fileIds;
   const fileKeys = await keys(filesStore);
 
-  fileKeys.forEach(async (key) => {
+  for (const key of fileKeys) {
     // Skip if the file is used
     if (usedFileIds.includes(key.toString())) {
-      return;
+      continue;
     }
 
     const file = await get<BinaryFileData>(key, filesStore);
@@ -44,13 +44,13 @@ type ScriptParams = {
       file,
     });
 
-    // Skipt deletion if file was created after the execution timestamp
+    // Skip deletion if a file was created after the execution timestamp
     if (file.created > params.executionTimestamp) {
-      return;
+      continue;
     }
 
     XLogger.debug("Removing file", key);
 
     await del(key, filesStore);
-  });
+  }
 })();

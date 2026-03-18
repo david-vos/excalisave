@@ -149,7 +149,7 @@ const SyncSettings: React.FC<SyncSettingsProps> = ({ onBack }) => {
       setIsLoading(true);
 
       const response = await browser.runtime.sendMessage({
-        type: "CONFIGURE_GITHUB_PROVIDER",
+        type: MessageType.CONFIGURE_GITHUB_PROVIDER,
         payload: {
           token: githubToken,
           repoOwner: repoOwner,

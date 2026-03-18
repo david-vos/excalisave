@@ -15,6 +15,7 @@ import {
 } from "@radix-ui/themes";
 import React, { useState } from "react";
 import { IDrawing } from "../../interfaces/drawing.interface";
+import { PLACEHOLDER_IMAGE } from "../../lib/constants";
 import "./Drawing.styles.scss";
 import { AddToFolderModal } from "../AddToFolder/AddToFolder.component";
 import { Folder } from "../../interfaces/folder.interface";
@@ -71,12 +72,8 @@ export function Drawing(props: DrawingProps) {
             position: "relative",
             backgroundColor: props.drawing.viewBackgroundColor || "#fff",
           }}
-          src={
-            props.drawing.imageBase64
-              ? props.drawing.imageBase64
-              : "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+ip1sAAAAASUVORK5CYII="
-          }
-        />
+          src={props.drawing.imageBase64 || PLACEHOLDER_IMAGE}
+         alt={PLACEHOLDER_IMAGE}/>
         {props.drawing.sync && (
           <CheckCircledIcon
             className="Drawing__sync-indicator"
