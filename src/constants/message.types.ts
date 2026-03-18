@@ -1,6 +1,7 @@
 import { BinaryFileData } from "@excalidraw/excalidraw/types/types";
 import { DrawingDataState } from "../interfaces/drawing-data-state.interface";
 import { IDrawing } from "../interfaces/drawing.interface";
+import type { UUID } from "../lib/utils/id.utils";
 
 export enum MessageType {
   // For background:
@@ -29,7 +30,7 @@ export enum MessageType {
 export type SaveNewDrawingMessage = {
   type: MessageType.SAVE_NEW_DRAWING;
   payload: {
-    id: string;
+    id: UUID;
     name: string;
     sync?: boolean;
     excalidraw: string;
@@ -44,7 +45,7 @@ export type SaveNewDrawingMessage = {
 export type SaveDrawingMessage = {
   type: MessageType.SAVE_DRAWING;
   payload: {
-    id: string;
+    id: UUID;
     name?: string;
     sync?: boolean;
     excalidraw: string;
@@ -74,21 +75,21 @@ export type CleanupFilesMessage = {
 export type DeleteDrawingMessage = {
   type: MessageType.DELETE_DRAWING;
   payload: {
-    id: string;
+    id: UUID;
   };
 };
 
 export type DeleteDrawingSyncMessage = {
   type: MessageType.DELETE_DRAWING_SYNC;
   payload: {
-    id: string;
+    id: UUID;
   };
 };
 
 export type SyncDrawingMessage = {
   type: MessageType.SYNC_DRAWING;
   payload: {
-    id: string;
+    id: UUID;
   };
 };
 
@@ -102,7 +103,7 @@ export type GetChangeHistoryMessage = {
 export type ShowMergeConflictMessage = {
   type: MessageType.SHOW_MERGE_CONFLICT;
   payload: {
-    drawingId: string;
+    drawingId: UUID;
     localDrawing: IDrawing;
     remoteDrawing: IDrawing;
   };
@@ -114,7 +115,7 @@ export type ConfigureGithubProviderMessage = {
     token: string;
     repoOwner: string;
     repoName: string;
-    drawingsToSync: string[];
+    drawingsToSync: UUID[];
   };
 };
 

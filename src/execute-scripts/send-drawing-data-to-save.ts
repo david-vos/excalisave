@@ -11,9 +11,11 @@ import { DRAWING_ID_KEY_LS, DRAWING_TITLE_KEY_LS } from "../lib/constants";
 import { setLocalStorageItemAndNotify } from "../lib/localStorage.utils";
 import { browser } from "webextension-polyfill-ts";
 
+import type { UUID } from "../lib/utils/id.utils";
+
 type ScriptParams = {
   name: string;
-  id: string;
+  id: UUID;
   setCurrent: boolean;
   sync: boolean;
 };

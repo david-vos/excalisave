@@ -18,7 +18,8 @@ import { IDrawing } from "../../interfaces/drawing.interface";
 import { Folder } from "../../interfaces/folder.interface";
 import { XLogger } from "../../lib/logger";
 import { keyBy } from "../../lib/utils/array.utils";
-import { RandomUtils } from "../../lib/utils/random.utils";
+import type { UUID } from "../../lib/utils/id.utils";
+import { IdUtils } from "../../lib/utils/id.utils";
 import { TabUtils } from "../../lib/utils/tab.utils";
 import { parseDataJSON } from "./helpers/import.helpers";
 
@@ -139,17 +140,17 @@ export function ImpExp() {
             files: ["./js/execute-scripts/load-store.bundle.js"],
           });
 
-          let favorites: string[] = dataJSON?.favorites || [];
+          let favorites: UUID[] = dataJSON?.favorites || [];
           let folders: Folder[] = dataJSON?.folders || [];
 
           XLogger.debug("Importing data", { favorites, folders });
 
-          const oldToNewIds: Record<string, string> = {};
+          const oldToNewIds: Record<string, UUID> = {};
 
           // Import drawings
           for (const drawing of drawings) {
             XLogger.debug("Importing drawing", drawing);
-            const newId = `drawing:${RandomUtils.generateRandomId()}`;
+            const newId = IdUtils.createDrawingId();
 
             if (drawing.excalisave?.id) {
               oldToNewIds[drawing.excalisave?.id] = newId;
@@ -286,7 +287,7 @@ export function ImpExp() {
       const zipFile = new JSZip();
 
       // Include favorites and folders
-      const favorites: string[] = result["favorites"] || [];
+      const favorites: UUID[] = result["favorites"] || [];
       const folders: Folder[] = result["folders"] || [];
 
       zipFile.file("data.json", JSON.stringify({ favorites, folders }));

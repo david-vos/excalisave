@@ -47,6 +47,7 @@ import { MergeConflictDialog } from "../components/MergeConflict/MergeConflict.c
 import { SyncService } from "../services/sync.service";
 import { CustomDomainUtils } from "../lib/custom-domains.utils";
 import { searchDrawings } from "../services/search.service";
+import type { UUID } from "../lib/utils/id.utils";
 
 const DialogDescription = Dialog.Description as any;
 const CalloutText = Callout.Text as any;
@@ -72,7 +73,7 @@ const Popup: React.FC = () => {
     isLiveCollaboration,
     setIsLiveCollaboration,
   } = useCurrentDrawingId();
-  const drawingIdToSwitch = useRef<string | undefined>(undefined);
+  const drawingIdToSwitch = useRef<UUID | undefined>(undefined);
   const [sidebarSelected, setSidebarSelected] = useState("");
   const { getRestorePoint, setRestorePoint } = useRestorePoint();
   const { loading, startLoading } = useDrawingLoading();
@@ -80,7 +81,7 @@ const Popup: React.FC = () => {
     useState<boolean>(false);
   const [mergeConflict, setMergeConflict] = useState<{
     isOpen: boolean;
-    drawingId: string;
+    drawingId: UUID;
     localDrawing: IDrawing;
     remoteDrawing: IDrawing;
   } | null>(null);
@@ -202,7 +203,7 @@ const Popup: React.FC = () => {
     });
   }, [searchTerm, sidebarSelected]);
 
-  const onRenameDrawing = async (id: string, newName: string) => {
+  const onRenameDrawing = async (id: UUID, newName: string) => {
     try {
       // Update the UI
       const newDrawing = drawings.map((drawing) => {
@@ -264,7 +265,7 @@ const Popup: React.FC = () => {
     }
   };
 
-  const onDeleteDrawing = async (id: string) => {
+  const onDeleteDrawing = async (id: UUID) => {
     try {
       // First, try to delete from sync service
       await browser.runtime.sendMessage({
@@ -331,15 +332,15 @@ const Popup: React.FC = () => {
     window.close();
   };
 
-  const handleAddToFavorites = async (drawingId: string) => {
+  const handleAddToFavorites = async (drawingId: UUID) => {
     await addToFavorites(drawingId);
   };
 
-  const handleRemoveFromFavorites = async (drawingId: string) => {
+  const handleRemoveFromFavorites = async (drawingId: UUID) => {
     await removeFromFavorites(drawingId);
   };
 
-  const handleToggleSync = async (drawingId: string, sync: boolean) => {
+  const handleToggleSync = async (drawingId: UUID, sync: boolean) => {
     try {
       // Update the UI
       const newDrawing = drawings.map((drawing) => {

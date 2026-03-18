@@ -1,4 +1,5 @@
 import { browser } from "webextension-polyfill-ts";
+import type { UUID } from "../lib/utils/id.utils";
 import { SyncProvider, ChangeHistoryItem } from "../interfaces/sync.interface";
 import { XLogger } from "../lib/logger";
 import { IDrawing } from "../interfaces/drawing.interface";
@@ -25,7 +26,7 @@ export class SyncService {
     this.provider = provider;
   }
 
-  public async initialize(drawingsToSync: string[]): Promise<void> {
+  public async initialize(drawingsToSync: UUID[]): Promise<void> {
     if (!this.provider) throw new Error("Sync provider not set");
     await this.provider.initialize();
     await this.syncFiles();
@@ -34,7 +35,7 @@ export class SyncService {
     }
   }
 
-  public async addSyncToDrawing(drawingId: string): Promise<void> {
+  public async addSyncToDrawing(drawingId: UUID): Promise<void> {
     const drawing = (await browser.storage.local.get(drawingId))[
       drawingId
     ] as IDrawing;
