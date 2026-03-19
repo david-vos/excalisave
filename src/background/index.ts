@@ -118,8 +118,13 @@ browser.runtime.onMessage.addListener(
             // Fallback: browser.action.openPopup() fails in Firefox when called
             // from a message handler (user gesture context is lost).
             // Open popup.html in a small popup window instead.
+            // Pass the originating tab ID so the popup can target the correct Excalidraw tab.
+            const senderTabId = _sender.tab?.id;
+            const popupUrl = senderTabId
+              ? browser.runtime.getURL(`popup.html?tabId=${senderTabId}`)
+              : browser.runtime.getURL("popup.html");
             await browser.windows.create({
-              url: browser.runtime.getURL("popup.html"),
+              url: popupUrl,
               type: "popup",
               width: 400,
               height: 600,
