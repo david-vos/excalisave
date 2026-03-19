@@ -434,7 +434,7 @@ browser.runtime.onMessage.addListener(
                         await browser.storage.local.get()
                     )
                         .filter((o) => o?.id?.startsWith?.("drawing:"))
-                        .map((d) => ({id: d.id, name: d.name, createdAt: d.createdAt}));
+                        .map((d) => ({id: d.id, name: d.name, createdAt: d.createdAt, roomUrl: d.roomUrl}));
 
                     return {success: true, drawings: allDrawings};
 
@@ -454,6 +454,7 @@ browser.runtime.onMessage.addListener(
                             id: d.id,
                             name: d.name,
                             createdAt: d.createdAt,
+                            roomUrl: d.roomUrl,
                         })),
                     };
                 }

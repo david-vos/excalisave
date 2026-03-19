@@ -15,6 +15,7 @@ type DrawingListItem = {
   id: string;
   name: string;
   createdAt?: string;
+  roomUrl?: string;
 };
 
 function getDefaultDrawingName(): string {
@@ -284,7 +285,15 @@ export function DrawingTitle() {
                         onClick={() => handleLoadDrawing(drawing.id)}
                         title={drawing.name}
                       >
-                        {drawing.name}
+                        {drawing.roomUrl && (
+                          <span className="excalisave-dropdown__shared-icon" title="Shared session">
+                            <svg width="12" height="12" viewBox="0 0 16 16" fill="none">
+                              <circle cx="8" cy="8" r="7" fill="#22c55e" />
+                              <path d="M5.5 8.5L7 10L10.5 6.5" stroke="#fff" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                            </svg>
+                          </span>
+                        )}
+                        <span className="excalisave-dropdown__item-name">{drawing.name}</span>
                       </button>
                     ))
                   );
