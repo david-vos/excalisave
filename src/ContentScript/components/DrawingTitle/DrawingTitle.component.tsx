@@ -38,7 +38,23 @@ export function DrawingTitle() {
   const [searchResults, setSearchResults] = useState<DrawingListItem[] | null>(null);
   const [showTooltip, setShowTooltip] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const listRef = useRef<HTMLDivElement>(null);
+  const renameInputRef = useRef<HTMLInputElement>(null);
+  const [openMenuId, setOpenMenuId] = useState<string | null>(null);
+  const [menuPosition, setMenuPosition] = useState<{ top: number; left: number } | null>(null);
+  const [renamingId, setRenamingId] = useState<string | null>(null);
+  const [renameValue, setRenameValue] = useState("");
+  const [deletingId, setDeletingId] = useState<string | null>(null);
   const isUnsaved = !currentDrawingId;
+
+  // Reset menu state when dropdown closes
+  useEffect(() => {
+    if (!isOpen) {
+      setOpenMenuId(null);
+      setRenamingId(null);
+      setDeletingId(null);
+    }
+  }, [isOpen]);
 
   useEffect(() => {
     if (!isOpen) return undefined;
@@ -49,12 +65,22 @@ export function DrawingTitle() {
         !dropdownRef.current.contains(e.target as Node)
       ) {
         setIsOpen(false);
+        return;
+      }
+      if (openMenuId) {
+        const target = e.target as HTMLElement;
+        if (
+          !target.closest(".excalisave-dropdown__context-menu") &&
+          !target.closest(".excalisave-dropdown__dots-btn")
+        ) {
+          setOpenMenuId(null);
+        }
       }
     };
 
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, [isOpen]);
+  }, [isOpen, openMenuId]);
 
   useEffect(() => {
     if (!isOpen) return undefined;
@@ -184,6 +210,260 @@ export function DrawingTitle() {
     }
   }, []);
 
+  // Close context menu on list scroll
+  useEffect(() => {
+    if (!openMenuId || !listRef.current) return undefined;
+    const list = listRef.current;
+    const handleScroll = () => setOpenMenuId(null);
+    list.addEventListener("scroll", handleScroll);
+    return () => list.removeEventListener("scroll", handleScroll);
+  }, [openMenuId]);
+
+  // Focus rename input when entering rename mode
+  useEffect(() => {
+    if (renamingId && renameInputRef.current) {
+      renameInputRef.current.focus();
+      renameInputRef.current.select();
+    }
+  }, [renamingId]);
+
+  const handleMenuToggle = useCallback(
+    (e: React.MouseEvent, id: string) => {
+      e.stopPropagation();
+      setRenamingId(null);
+      setDeletingId(null);
+      if (openMenuId === id) {
+        setOpenMenuId(null);
+      } else {
+        const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
+        setOpenMenuId(id);
+        setMenuPosition({
+          top: rect.bottom + 4,
+          left: rect.left - 100,
+        });
+      }
+    },
+    [openMenuId]
+  );
+
+  const handleRenameConfirm = useCallback(
+    async (id: string) => {
+      const trimmedName = renameValue.trim();
+      if (!trimmedName) {
+        setRenamingId(null);
+        return;
+      }
+
+      try {
+        const stored = await browser.storage.local.get(id);
+        const drawing = stored[id];
+        if (drawing) {
+          await browser.storage.local.set({
+            [id]: { ...drawing, name: trimmedName },
+          });
+        }
+
+        if (currentDrawingId === id) {
+          localStorage.setItem(DRAWING_TITLE_KEY_LS, trimmedName);
+          window.dispatchEvent(
+            new CustomEvent("localStorageChange", {
+              detail: { key: DRAWING_TITLE_KEY_LS, value: trimmedName },
+            })
+          );
+        }
+
+        setDrawings((prev) =>
+          prev.map((d) =>
+            d.id === id ? { ...d, name: trimmedName } : d
+          )
+        );
+        setSearchResults((prev) =>
+          prev
+            ? prev.map((d) =>
+                d.id === id ? { ...d, name: trimmedName } : d
+              )
+            : null
+        );
+
+        await browser.runtime.sendMessage({
+          type: MessageType.SYNC_DRAWING,
+          payload: { id },
+        });
+      } catch (err) {
+        XLogger.error("Failed to rename drawing", err);
+      }
+
+      setRenamingId(null);
+    },
+    [renameValue, currentDrawingId]
+  );
+
+  const handleDeleteConfirm = useCallback(
+    async (id: string) => {
+      try {
+        await browser.runtime.sendMessage({
+          type: MessageType.DELETE_DRAWING,
+          payload: { id },
+        });
+
+        await browser.storage.local.remove(id);
+
+        const favResult = await browser.storage.local.get("favorites");
+        const favorites = favResult["favorites"] || [];
+        await browser.storage.local.set({
+          favorites: favorites.filter((fav: string) => fav !== id),
+        });
+
+        const foldersResult = await browser.storage.local.get("folders");
+        const folders = foldersResult["folders"] || [];
+        await browser.storage.local.set({
+          folders: folders.map((folder: any) => ({
+            ...folder,
+            drawingIds: (folder.drawingIds || []).filter(
+              (did: string) => did !== id
+            ),
+          })),
+        });
+
+        if (currentDrawingId === id) {
+          localStorage.removeItem(DRAWING_ID_KEY_LS);
+          localStorage.removeItem(DRAWING_TITLE_KEY_LS);
+          window.dispatchEvent(
+            new CustomEvent("localStorageChange", {
+              detail: { key: DRAWING_TITLE_KEY_LS, value: null },
+            })
+          );
+          window.dispatchEvent(
+            new CustomEvent("localStorageChange", {
+              detail: { key: DRAWING_ID_KEY_LS, value: null },
+            })
+          );
+        }
+
+        setDrawings((prev) => prev.filter((d) => d.id !== id));
+        setSearchResults((prev) =>
+          prev ? prev.filter((d) => d.id !== id) : null
+        );
+      } catch (err) {
+        XLogger.error("Failed to delete drawing", err);
+      }
+
+      setDeletingId(null);
+    },
+    [currentDrawingId]
+  );
+
+  const renderDrawingItem = (drawing: DrawingListItem) => {
+    if (deletingId === drawing.id) {
+      return (
+        <div
+          key={drawing.id}
+          className="excalisave-dropdown__item excalisave-dropdown__item--confirm"
+        >
+          <span className="excalisave-dropdown__confirm-text">
+            Delete &ldquo;{drawing.name}&rdquo;?
+          </span>
+          <div className="excalisave-dropdown__confirm-actions">
+            <button
+              className="excalisave-dropdown__confirm-btn excalisave-dropdown__confirm-btn--yes"
+              onClick={() => handleDeleteConfirm(drawing.id)}
+            >
+              Yes
+            </button>
+            <button
+              className="excalisave-dropdown__confirm-btn excalisave-dropdown__confirm-btn--no"
+              onClick={() => setDeletingId(null)}
+            >
+              No
+            </button>
+          </div>
+        </div>
+      );
+    }
+
+    if (renamingId === drawing.id) {
+      return (
+        <div
+          key={drawing.id}
+          className="excalisave-dropdown__item excalisave-dropdown__item--renaming"
+        >
+          <input
+            ref={renameInputRef}
+            className="excalisave-dropdown__rename-input"
+            type="text"
+            value={renameValue}
+            onChange={(e) => setRenameValue(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") handleRenameConfirm(drawing.id);
+              if (e.key === "Escape") setRenamingId(null);
+            }}
+            onBlur={() => handleRenameConfirm(drawing.id)}
+            onClick={(e) => e.stopPropagation()}
+          />
+        </div>
+      );
+    }
+
+    return (
+      <div
+        key={drawing.id}
+        className={`excalisave-dropdown__item ${
+          drawing.id === currentDrawingId
+            ? "excalisave-dropdown__item--active"
+            : ""
+        }`}
+      >
+        <button
+          className="excalisave-dropdown__item-content"
+          onClick={() => handleLoadDrawing(drawing.id)}
+          title={drawing.name}
+        >
+          {drawing.roomUrl && (
+            <span
+              className="excalisave-dropdown__shared-icon"
+              title="Shared session"
+            >
+              <svg
+                width="12"
+                height="12"
+                viewBox="0 0 16 16"
+                fill="none"
+              >
+                <circle cx="8" cy="8" r="7" fill="#22c55e" />
+                <path
+                  d="M5.5 8.5L7 10L10.5 6.5"
+                  stroke="#fff"
+                  strokeWidth="1.5"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+              </svg>
+            </span>
+          )}
+          <span className="excalisave-dropdown__item-name">
+            {drawing.name}
+          </span>
+        </button>
+        <button
+          className="excalisave-dropdown__dots-btn"
+          onClick={(e) => handleMenuToggle(e, drawing.id)}
+          title="Options"
+        >
+          <svg
+            width="14"
+            height="14"
+            viewBox="0 0 16 16"
+            fill="currentColor"
+          >
+            <circle cx="8" cy="3" r="1.5" />
+            <circle cx="8" cy="8" r="1.5" />
+            <circle cx="8" cy="13" r="1.5" />
+          </svg>
+        </button>
+      </div>
+    );
+  };
+
   return (
     <>
       <div className="excalisave-title-wrapper">
@@ -259,7 +539,7 @@ export function DrawingTitle() {
                 />
               </div>
             )}
-            <div className="excalisave-dropdown__list">
+            <div ref={listRef} className="excalisave-dropdown__list">
               {loading ? (
                 <div className="excalisave-dropdown__empty">Loading...</div>
               ) : drawings.length === 0 ? (
@@ -274,28 +554,7 @@ export function DrawingTitle() {
                       No matches
                     </div>
                   ) : (
-                    displayList.map((drawing) => (
-                      <button
-                        key={drawing.id}
-                        className={`excalisave-dropdown__item ${
-                          drawing.id === currentDrawingId
-                            ? "excalisave-dropdown__item--active"
-                            : ""
-                        }`}
-                        onClick={() => handleLoadDrawing(drawing.id)}
-                        title={drawing.name}
-                      >
-                        {drawing.roomUrl && (
-                          <span className="excalisave-dropdown__shared-icon" title="Shared session">
-                            <svg width="12" height="12" viewBox="0 0 16 16" fill="none">
-                              <circle cx="8" cy="8" r="7" fill="#22c55e" />
-                              <path d="M5.5 8.5L7 10L10.5 6.5" stroke="#fff" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-                            </svg>
-                          </span>
-                        )}
-                        <span className="excalisave-dropdown__item-name">{drawing.name}</span>
-                      </button>
-                    ))
+                    displayList.map((drawing) => renderDrawingItem(drawing))
                   );
                 })()
               )}
@@ -309,6 +568,53 @@ export function DrawingTitle() {
                 Open Full UI
               </button>
             </div>
+            {openMenuId && menuPosition && (
+              <div
+                className="excalisave-dropdown__context-menu"
+                style={{
+                  position: "fixed",
+                  top: menuPosition.top,
+                  left: menuPosition.left,
+                }}
+              >
+                <button
+                  className="excalisave-dropdown__context-item"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    const drawing =
+                      drawings.find((d) => d.id === openMenuId) ||
+                      searchResults?.find((d) => d.id === openMenuId);
+                    if (drawing) {
+                      setRenamingId(openMenuId);
+                      setRenameValue(drawing.name);
+                    }
+                    setOpenMenuId(null);
+                  }}
+                >
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z" />
+                    <path d="m15 5 4 4" />
+                  </svg>
+                  Rename
+                </button>
+                <div className="excalisave-dropdown__context-separator" />
+                <button
+                  className="excalisave-dropdown__context-item excalisave-dropdown__context-item--danger"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setDeletingId(openMenuId);
+                    setOpenMenuId(null);
+                  }}
+                >
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M3 6h18" />
+                    <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6" />
+                    <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" />
+                  </svg>
+                  Delete
+                </button>
+              </div>
+            )}
           </div>
         )}
       </div>
