@@ -77,6 +77,11 @@ module.exports = {
       "execute-scripts",
       "load-store.ts"
     ),
+    "execute-scripts/shared-link-import": path.join(
+      sourcePath,
+      "execute-scripts",
+      "shared-link-import.ts"
+    ),
     "content-scripts/listenDrawingUpdates": path.join(
       sourcePath,
       "ContentScript",
