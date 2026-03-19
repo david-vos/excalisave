@@ -11,10 +11,68 @@ import {
   getCustomDomains,
   registerContentScriptForCustomDomains,
 } from "./custom-domains.utils";
+import { FragmentHandlerRegistry } from "./url-fragment-handler";
+import { searchDrawings } from "../services/search.service";
 
 // Initialize services
 const syncService = SyncService.getInstance();
 const githubConfigService = GitHubConfigService.getInstance();
+
+// URL Fragment Handler
+const fragmentRegistry = new FragmentHandlerRegistry();
+
+// Cache custom domains in memory for fast URL matching
+let cachedCustomDomainOrigins: string[] = [];
+
+async function refreshCustomDomainCache() {
+  const domains = await getCustomDomains();
+  cachedCustomDomainOrigins = domains
+    .filter((d) => d.enabled)
+    .map((d) => d.origin);
+}
+
+function isExcalidrawOrigin(url: string): boolean {
+  try {
+    const origin = new URL(url).origin;
+    return (
+      origin === "https://excalidraw.com" ||
+      cachedCustomDomainOrigins.includes(origin)
+    );
+  } catch {
+    return false;
+  }
+}
+
+// Register #json= shared link handler
+fragmentRegistry.register({
+  pattern: /^#json=([^,]+),(.+)$/,
+  handler: async (tabId, _match) => {
+    XLogger.log(`[SharedLink] Detected shared link on tab ${tabId}`);
+    await browser.scripting.executeScript({
+      target: { tabId },
+      files: ["./js/execute-scripts/shared-link-import.bundle.js"],
+    });
+  },
+});
+
+// Listen for URL changes on Excalidraw tabs
+browser.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
+  if (changeInfo.status === "complete" && tab.url && isExcalidrawOrigin(tab.url)) {
+    fragmentRegistry.handleUrl(tabId, tab.url);
+  }
+});
+
+// Clean up when tabs are closed
+browser.tabs.onRemoved.addListener((tabId) => {
+  fragmentRegistry.clearTab(tabId);
+});
+
+// Keep custom domain cache fresh
+browser.storage.onChanged.addListener((changes) => {
+  if (changes[CUSTOM_DOMAINS_KEY]) {
+    refreshCustomDomainCache();
+  }
+});
 
 browser.runtime.onInstalled.addListener(async () => {
   XLogger.log("onInstalled...");
@@ -34,6 +92,7 @@ browser.runtime.onInstalled.addListener(async () => {
   const domains = await getCustomDomains();
   await registerContentScriptForCustomDomains(domains);
   XLogger.debug("[Installed] ✅ Content scripts for custom domains registered");
+  await refreshCustomDomainCache();
 });
 
 browser.runtime.onStartup.addListener(async () => {
@@ -41,6 +100,7 @@ browser.runtime.onStartup.addListener(async () => {
   const domains = await getCustomDomains();
   await registerContentScriptForCustomDomains(domains);
   XLogger.debug("[Startup] ✅ Content scripts for custom domains registered");
+  await refreshCustomDomainCache();
 });
 browser.runtime.onMessage.addListener(
   async (message: BackgroundMessage, _sender: any): Promise<any> => {
@@ -51,7 +111,20 @@ browser.runtime.onMessage.addListener(
 
       switch (message.type) {
         case MessageType.OPEN_POPUP:
-          browser.action.openPopup();
+          try {
+            await browser.action.openPopup();
+          } catch (popupError) {
+            XLogger.warn("[OPEN_POPUP] browser.action.openPopup() failed, using fallback window", popupError);
+            // Fallback: browser.action.openPopup() fails in Firefox when called
+            // from a message handler (user gesture context is lost).
+            // Open popup.html in a small popup window instead.
+            await browser.windows.create({
+              url: browser.runtime.getURL("popup.html"),
+              type: "popup",
+              width: 400,
+              height: 600,
+            });
+          }
           break;
 
         case MessageType.SAVE_NEW_DRAWING:
@@ -304,6 +377,69 @@ browser.runtime.onMessage.addListener(
 
         case MessageType.GET_CUSTOM_DOMAINS:
           return { success: true, domains: await getCustomDomains() };
+
+        case MessageType.LOAD_DRAWING: {
+          const loadTabId = _sender.tab?.id;
+          if (!loadTabId)
+            return { success: false, error: "No sender tab ID" };
+
+          await browser.scripting.executeScript({
+            target: { tabId: loadTabId },
+            func: (id: string) => {
+              window.__SCRIPT_PARAMS__ = { id };
+            },
+            args: [message.payload.id],
+          });
+
+          await browser.scripting.executeScript({
+            target: { tabId: loadTabId },
+            files: ["./js/execute-scripts/loadDrawing.bundle.js"],
+          });
+
+          return { success: true };
+        }
+
+        case MessageType.CREATE_NEW_DRAWING: {
+          const newDrawingTabId = _sender.tab?.id;
+          if (!newDrawingTabId)
+            return { success: false, error: "No sender tab ID" };
+
+          await browser.scripting.executeScript({
+            target: { tabId: newDrawingTabId },
+            files: ["./js/execute-scripts/newDrawing.bundle.js"],
+          });
+
+          return { success: true };
+        }
+
+        case MessageType.GET_ALL_DRAWINGS:
+          const allDrawings = Object.values(
+            await browser.storage.local.get()
+          )
+            .filter((o) => o?.id?.startsWith?.("drawing:"))
+            .map((d) => ({ id: d.id, name: d.name, createdAt: d.createdAt }));
+
+          return { success: true, drawings: allDrawings };
+
+        case MessageType.SEARCH_DRAWINGS: {
+          const allStoredDrawings = Object.values(
+            await browser.storage.local.get()
+          ).filter((o) => o?.id?.startsWith?.("drawing:")) as IDrawing[];
+
+          const results = searchDrawings(
+            allStoredDrawings,
+            message.payload.query
+          );
+
+          return {
+            success: true,
+            drawings: results.map((d) => ({
+              id: d.id,
+              name: d.name,
+              createdAt: d.createdAt,
+            })),
+          };
+        }
 
         default:
           return { success: false, error: "Unknown message type" };

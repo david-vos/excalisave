@@ -162,7 +162,6 @@ export function Drawing(props: DrawingProps) {
               </DropdownMenu.Item>
               <DropdownMenu.Separator />
               <DropdownMenu.Item
-                disabled={!props.inExcalidrawPage}
                 color="red"
                 onClick={() => setDeleteModalOpen(true)}
               >

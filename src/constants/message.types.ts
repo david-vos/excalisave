@@ -25,6 +25,10 @@ export enum MessageType {
   GET_GITHUB_CONFIG = "GET_GITHUB_CONFIG",
   CHECK_GITHUB_AUTH = "CHECK_GITHUB_AUTH",
   ERROR_LOADING_STORE = "ERROR_LOADING_STORE",
+  GET_ALL_DRAWINGS = "GET_ALL_DRAWINGS",
+  LOAD_DRAWING = "LOAD_DRAWING",
+  CREATE_NEW_DRAWING = "CREATE_NEW_DRAWING",
+  SEARCH_DRAWINGS = "SEARCH_DRAWINGS",
 }
 
 export type SaveNewDrawingMessage = {
@@ -161,6 +165,28 @@ export type CheckGitHubAuthMessage = {
   type: MessageType.CHECK_GITHUB_AUTH;
 };
 
+export type GetAllDrawingsMessage = {
+  type: MessageType.GET_ALL_DRAWINGS;
+};
+
+export type LoadDrawingMessage = {
+  type: MessageType.LOAD_DRAWING;
+  payload: {
+    id: UUID;
+  };
+};
+
+export type CreateNewDrawingMessage = {
+  type: MessageType.CREATE_NEW_DRAWING;
+};
+
+export type SearchDrawingsMessage = {
+  type: MessageType.SEARCH_DRAWINGS;
+  payload: {
+    query: string;
+  };
+};
+
 export type BackgroundMessage =
   | SaveDrawingMessage
   | SaveNewDrawingMessage
@@ -177,4 +203,8 @@ export type BackgroundMessage =
   | RemoveGitHubProviderMessage
   | GetGitHubConfigMessage
   | CheckGitHubAuthMessage
-  | SyncDrawingMessage;
+  | SyncDrawingMessage
+  | GetAllDrawingsMessage
+  | LoadDrawingMessage
+  | CreateNewDrawingMessage
+  | SearchDrawingsMessage;
