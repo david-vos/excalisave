@@ -29,6 +29,8 @@ export enum MessageType {
   LOAD_DRAWING = "LOAD_DRAWING",
   CREATE_NEW_DRAWING = "CREATE_NEW_DRAWING",
   SEARCH_DRAWINGS = "SEARCH_DRAWINGS",
+  FIND_DRAWING_BY_ROOM_URL = "FIND_DRAWING_BY_ROOM_URL",
+  SET_DRAWING_ROOM_URL = "SET_DRAWING_ROOM_URL",
 }
 
 export type SaveNewDrawingMessage = {
@@ -187,6 +189,21 @@ export type SearchDrawingsMessage = {
   };
 };
 
+export type FindDrawingByRoomUrlMessage = {
+  type: MessageType.FIND_DRAWING_BY_ROOM_URL;
+  payload: {
+    roomUrl: string;
+  };
+};
+
+export type SetDrawingRoomUrlMessage = {
+  type: MessageType.SET_DRAWING_ROOM_URL;
+  payload: {
+    id: UUID;
+    roomUrl: string;
+  };
+};
+
 export type BackgroundMessage =
   | SaveDrawingMessage
   | SaveNewDrawingMessage
@@ -207,4 +224,6 @@ export type BackgroundMessage =
   | GetAllDrawingsMessage
   | LoadDrawingMessage
   | CreateNewDrawingMessage
-  | SearchDrawingsMessage;
+  | SearchDrawingsMessage
+  | FindDrawingByRoomUrlMessage
+  | SetDrawingRoomUrlMessage;

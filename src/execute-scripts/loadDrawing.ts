@@ -86,6 +86,19 @@ type ScriptParams = {
   const { excalidraw, excalidrawState, versionFiles, versionDataState } =
     drawingData.data;
 
+  // If this drawing has a room URL, navigate directly to the room
+  // so the user reconnects to the live collaboration session.
+  // Use beforeunload to set values last — Excalidraw's own beforeunload
+  // handler can overwrite localStorage during navigation.
+  if (drawingData.roomUrl) {
+    window.addEventListener("beforeunload", () => {
+      localStorage.setItem(DRAWING_ID_KEY_LS, loadDrawingId);
+      localStorage.setItem(DRAWING_TITLE_KEY_LS, drawingData.name);
+    });
+    location.assign(drawingData.roomUrl);
+    return;
+  }
+
   // Seems Excalidraw saves data to localStorage before reload page(I guess when there is something pending).
   // To avoid it overwrite our data,  save to localStorage on this event instead.
   // ! TODO: Probably need to move the logic of saving data before switch to here.

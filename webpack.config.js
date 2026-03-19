@@ -82,6 +82,11 @@ module.exports = {
       "execute-scripts",
       "shared-link-import.ts"
     ),
+    "execute-scripts/room-join": path.join(
+      sourcePath,
+      "execute-scripts",
+      "room-join.ts"
+    ),
     "content-scripts/listenDrawingUpdates": path.join(
       sourcePath,
       "ContentScript",

@@ -55,6 +55,18 @@ fragmentRegistry.register({
   },
 });
 
+// Register #room= live collaboration handler
+fragmentRegistry.register({
+  pattern: /^#room=([^,]+),(.+)$/,
+  handler: async (tabId, _match) => {
+    XLogger.log(`[RoomJoin] Detected room link on tab ${tabId}`);
+    await browser.scripting.executeScript({
+      target: { tabId },
+      files: ["./js/execute-scripts/room-join.bundle.js"],
+    });
+  },
+});
+
 // Listen for URL changes on Excalidraw tabs
 browser.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
   if (changeInfo.status === "complete" && tab.url && isExcalidrawOrigin(tab.url)) {
@@ -444,6 +456,34 @@ browser.runtime.onMessage.addListener(
               createdAt: d.createdAt,
             })),
           };
+        }
+
+        case MessageType.FIND_DRAWING_BY_ROOM_URL: {
+          const allData = await browser.storage.local.get();
+          const match = Object.values(allData).find(
+            (d) =>
+              d?.id?.startsWith?.("drawing:") &&
+              d.roomUrl === message.payload.roomUrl
+          ) as IDrawing | undefined;
+
+          return match
+            ? { success: true, drawing: { id: match.id, name: match.name } }
+            : { success: true, drawing: null };
+        }
+
+        case MessageType.SET_DRAWING_ROOM_URL: {
+          const existing = await browser.storage.local.get(message.payload.id);
+          const drawingToUpdate = existing[message.payload.id];
+          if (!drawingToUpdate) {
+            return { success: false, error: "Drawing not found" };
+          }
+          await browser.storage.local.set({
+            [message.payload.id]: {
+              ...drawingToUpdate,
+              roomUrl: message.payload.roomUrl,
+            },
+          });
+          return { success: true };
         }
 
         default:

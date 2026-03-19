@@ -10,6 +10,7 @@ export interface IDrawing {
   name: string;
   createdAt: string;
   sync: boolean;
+  roomUrl?: string;
   imageBase64?: string;
   viewBackgroundColor?: string;
   data: {
