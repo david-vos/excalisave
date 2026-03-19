@@ -211,12 +211,6 @@ module.exports = {
     new CopyWebpackPlugin({
       patterns: [
         { from: "src/assets", to: "assets" },
-        // The excalidraw lib is split into two files because Mozilla's add-on
-        // linter rejects JS files larger than 5MB. The original single file was
-        // ~5.4MB. Both parts are loaded as content scripts in order (see manifest.json)
-        // and share the same scope, so splitting at a statement boundary is safe.
-        { from: "src/external-libs/excalidraw.production.min.part1.js", to: "libs" },
-        { from: "src/external-libs/excalidraw.production.min.part2.js", to: "libs" },
         { from: "node_modules/react/umd/react.production.min.js", to: "libs" },
         {
           from: "node_modules/react-dom/umd/react-dom.production.min.js",
@@ -230,7 +224,6 @@ module.exports = {
           from: "node_modules/@excalidraw/excalidraw/dist/excalidraw-assets/",
           globOptions: {
             dot: true,
-            // The built lib external-libs/exccalidraw.production.js is one single file, no need to copy chunks.
             ignore: ["**/vendor-*.js*", "**/locales/**"],
           },
           to: "assets/excalidraw-assets",
@@ -244,8 +237,6 @@ module.exports = {
     minimizer: [
       new TerserPlugin({
         parallel: true,
-        // Already minimized, and generates error if minified again.
-        exclude: /excalidraw\.production\.min\.part[12]\.js/,
         terserOptions: {
           format: {
             comments: false,

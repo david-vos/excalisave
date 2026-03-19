@@ -1,17 +1,8 @@
-import type { ExcalidrawImageElement } from "@excalidraw/excalidraw/types/element/types";
-import type {
-  BinaryFileData,
-  BinaryFiles,
-} from "@excalidraw/excalidraw/types/types";
-import { createStore, getMany } from "idb-keyval";
 import { DrawingDataState } from "../interfaces/drawing-data-state.interface";
 import type { ExcalidrawDataState } from "../interfaces/excalidraw-data-state.interface";
 import { XLogger } from "../lib/logger";
 import { convertBlobToBase64Async } from "../lib/utils/blob-to-base64.util";
-import { calculateNewDimensions } from "../lib/utils/calculate-new-dimensions.util";
-
-// Where images are stored: https://github.com/excalidraw/excalidraw/blob/e8def8da8d5fcf9445aebdd996de3fee4cecf7ef/excalidraw-app/data/LocalData.ts#L24
-const filesStore = createStore("files-db", "files-store");
+import { MAX_WIDTH_THUMBNAIL, MAX_HEIGHT_THUMBNAIL } from "../lib/constants";
 
 type GetDrawingDataStateProps = {
   takeScreenshot?: boolean;
@@ -22,17 +13,13 @@ export async function getDrawingDataState(
   const { excalidraw, excalidrawState, versionFiles, versionDataState } =
     getExcalidrawDataState();
 
-  const elements = JSON.parse(excalidraw) as ExcalidrawElements;
-  const appState = JSON.parse(excalidrawState) as ExcalidrawAppState;
+  const appState = JSON.parse(excalidrawState);
 
   let imageBase64: string | undefined;
   // Screenshot is optional
   try {
     if (props?.takeScreenshot) {
-      imageBase64 = await takeScreenshot({
-        elements,
-        appState,
-      });
+      imageBase64 = await takeScreenshot();
     }
   } catch (error) {
     XLogger.error("Error taking screenshot", error);
@@ -48,51 +35,56 @@ export async function getDrawingDataState(
   };
 }
 
-type TakeScreenshotProps = {
-  elements: ExcalidrawElements;
-  appState: ExcalidrawAppState;
-};
+function captureCanvas(): Promise<string> {
+  const sourceCanvas = document.querySelector(
+    ".excalidraw canvas"
+  ) as HTMLCanvasElement | null;
 
-async function takeScreenshot({
-  elements,
-  appState,
-}: TakeScreenshotProps): Promise<string> {
-  const startTime = new Date().getTime();
-
-  const imageFileIds = elements
-    .filter((item): item is ExcalidrawImageElement => item.type === "image")
-    .map((item) => item.fileId);
-
-  let files: BinaryFiles = {};
-
-  try {
-    const response = await getMany<BinaryFileData | undefined>(
-      imageFileIds,
-      filesStore
-    );
-
-    response.forEach((item) => {
-      if (item) {
-        files[item.id] = item;
-      }
-    });
-  } catch (error) {
-    XLogger.warn("Error retrieving files from IndexedDB", error);
+  if (!sourceCanvas) {
+    throw new Error("Excalidraw canvas not found");
   }
 
-  const blob = await window.ExcalidrawLib.exportToBlob({
-    elements,
-    getDimensions: (width, height) => {
-      return calculateNewDimensions(width, height);
-    },
-    files,
-    appState,
-  });
+  const srcWidth = sourceCanvas.width;
+  const srcHeight = sourceCanvas.height;
 
-  const imageBase64 = await convertBlobToBase64Async(blob);
+  const widthScale = srcWidth / MAX_WIDTH_THUMBNAIL;
+  const heightScale = srcHeight / MAX_HEIGHT_THUMBNAIL;
+  const scale = Math.max(widthScale, heightScale, 1);
+  const thumbWidth = Math.max(1, Math.round(srcWidth / scale));
+  const thumbHeight = Math.max(1, Math.round(srcHeight / scale));
+
+  const offscreen = document.createElement("canvas");
+  offscreen.width = thumbWidth;
+  offscreen.height = thumbHeight;
+
+  const ctx = offscreen.getContext("2d");
+  if (!ctx) {
+    throw new Error("Could not get canvas context");
+  }
+
+  ctx.drawImage(sourceCanvas, 0, 0, thumbWidth, thumbHeight);
+
+  return new Promise<string>((resolve, reject) => {
+    offscreen.toBlob(
+      (b) => {
+        if (!b) {
+          reject(new Error("toBlob failed"));
+          return;
+        }
+        convertBlobToBase64Async(b).then(resolve, reject);
+      },
+      "image/png"
+    );
+  });
+}
+
+async function takeScreenshot(): Promise<string> {
+  const startTime = new Date().getTime();
+
+  const imageBase64 = await captureCanvas();
 
   XLogger.log(
-    "📷 Take Screenshot Took:",
+    "Take Screenshot Took:",
     new Date().getTime() - startTime + "ms"
   );
 

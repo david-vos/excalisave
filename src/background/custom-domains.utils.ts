@@ -31,8 +31,6 @@ export async function registerContentScriptForCustomDomains(
       js: [
         "libs/react.production.min.js",
         "libs/react-dom.production.min.js",
-        "libs/excalidraw.production.min.part1.js",
-        "libs/excalidraw.production.min.part2.js",
         "js/content-scripts/listenDrawingUpdates.bundle.js",
       ],
       css: ["css/content-scripts/listenDrawingUpdates.css"],
