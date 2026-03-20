@@ -9,7 +9,7 @@
     "48": "assets/icons/48.png",
     "128": "assets/icons/128.png"
   },
-  "homepage_url": "https://github.com/atharvakadlag/excalisave",
+  "homepage_url": "https://github.com/david-vos/excalisave",
   "permissions": [
     "activeTab",
     "tabs",
@@ -17,13 +17,17 @@
     "scripting",
     "unlimitedStorage"
   ],
-  "__chrome|firefox__author": "atharvakadlag",
+  "__chrome|firefox__author": "david-vos (fork of atharvakadlag/excalisave)",
   "__opera__developer": {
-    "name": "atharvakadlag"
+    "name": "david-vos"
   },
   "__firefox|prod__browser_specific_settings": {
     "gecko": {
-      "id": "excalisave@atharvakadlag.github.io"
+      "id": "excalisave-fork@dvos.me",
+      "data_collection_permissions": {
+        "required": ["none"],
+        "optional": []
+      }
     }
   },
   "__chrome__minimum_chrome_version": "88",
