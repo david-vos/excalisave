@@ -3,6 +3,7 @@ import {BackgroundMessage, MessageType} from "../constants/message.types";
 import {IDrawing} from "../interfaces/drawing.interface";
 import {XLogger} from "../lib/logger";
 import {IdUtils} from "../lib/utils/id.utils";
+import {getDefaultDrawingName} from "../lib/utils/date.utils";
 import {TabUtils} from "../lib/utils/tab.utils";
 import {GitHubConfigService} from "../services/github/github-config.service";
 import {SyncService} from "../services/sync.service";
@@ -420,6 +421,17 @@ browser.runtime.onMessage.addListener(
                     const newDrawingTabId = _sender.tab?.id;
                     if (!newDrawingTabId)
                         return {success: false, error: "No sender tab ID"};
+
+                    const newDrawingId = IdUtils.createDrawingId();
+                    const newDrawingName = getDefaultDrawingName();
+
+                    await browser.scripting.executeScript({
+                        target: {tabId: newDrawingTabId},
+                        func: (id: string, name: string) => {
+                            window.__SCRIPT_PARAMS__ = {id, name};
+                        },
+                        args: [newDrawingId, newDrawingName],
+                    });
 
                     await browser.scripting.executeScript({
                         target: {tabId: newDrawingTabId},

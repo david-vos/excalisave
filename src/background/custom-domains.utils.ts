@@ -14,7 +14,7 @@ export async function registerContentScriptForCustomDomains(
 ) {
   try {
     await browser.scripting.unregisterContentScripts({
-      ids: ["custom-domain-scripts", "custom-domain-overwrite"],
+      ids: ["custom-domain-scripts"],
     });
   } catch {}
 
@@ -34,12 +34,6 @@ export async function registerContentScriptForCustomDomains(
         "js/content-scripts/listenDrawingUpdates.bundle.js",
       ],
       css: ["css/content-scripts/listenDrawingUpdates.css"],
-      runAt: "document_idle",
-    },
-    {
-      id: "custom-domain-overwrite",
-      matches,
-      js: ["js/content-scripts/addOverwriteAction.bundle.js"],
       runAt: "document_idle",
     },
   ]);

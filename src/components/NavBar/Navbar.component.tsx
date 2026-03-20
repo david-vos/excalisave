@@ -189,8 +189,6 @@ export function NavBar({
               Duplicate
             </DropdownMenu.Item>
           )}
-          {/* <DropdownMenu.Separator /> */}
-          {/* <DropdownMenu.Item>Add to favorites</DropdownMenu.Item> */}
         </DropdownMenu.Content>
       </DropdownMenu.Root>
 

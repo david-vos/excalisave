@@ -30,7 +30,6 @@ const extensionReloaderPlugin = new ExtensionReloader({
       "execute-scripts/load-store",
       "execute-scripts/delete-unused-files",
       "content-scripts/listenDrawingUpdates",
-      "content-scripts/addOverwriteAction",
     ],
     background: "background",
     extensionPage: [
@@ -38,7 +37,6 @@ const extensionReloaderPlugin = new ExtensionReloader({
       "options",
       "execute-scripts/sendDrawingDataToSave",
       "content-scripts/listenDrawingUpdates",
-      "content-scripts/addOverwriteAction",
     ],
   },
 });
@@ -92,11 +90,6 @@ module.exports = {
       sourcePath,
       "ContentScript",
       "listenDrawingUpdates.ts"
-    ),
-    "content-scripts/addOverwriteAction": path.join(
-      sourcePath,
-      "ContentScript",
-      "addOverwriteAction.ts"
     ),
     popup: path.join(sourcePath, "Popup", "index.tsx"),
     options: path.join(sourcePath, "Options", "index.tsx"),

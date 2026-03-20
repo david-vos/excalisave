@@ -6,10 +6,10 @@ import {
   DRAWING_TITLE_KEY_LS,
 } from "../../../lib/constants";
 import { browser } from "webextension-polyfill-ts";
-import { MessageType, SaveDrawingMessage } from "../../../constants/message.types";
-import { getDrawingDataState } from "../../content-script.utils";
+import { MessageType } from "../../../constants/message.types";
 import { XLogger } from "../../../lib/logger";
-import { As } from "../../../lib/types.utils";
+import { getDefaultDrawingName } from "../../../lib/utils/date.utils";
+import { saveCurrentDrawingToStorage } from "../../../lib/utils/drawing-message.utils";
 
 type DrawingListItem = {
   id: string;
@@ -17,14 +17,6 @@ type DrawingListItem = {
   createdAt?: string;
   roomUrl?: string;
 };
-
-function getDefaultDrawingName(): string {
-  const now = new Date();
-  const yyyy = now.getFullYear();
-  const mm = String(now.getMonth() + 1).padStart(2, "0");
-  const dd = String(now.getDate()).padStart(2, "0");
-  return `Drawing - ${yyyy}-${mm}-${dd}`;
-}
 
 export function DrawingTitle() {
   const title = useLocalStorageString(DRAWING_TITLE_KEY_LS, "");
@@ -137,21 +129,7 @@ export function DrawingTitle() {
 
     setSaving(true);
     try {
-      const drawingDataState = await getDrawingDataState();
-      await browser.runtime.sendMessage(
-        As<SaveDrawingMessage>({
-          type: MessageType.SAVE_DRAWING,
-          payload: {
-            id: currentDrawingId,
-            excalidraw: drawingDataState.excalidraw,
-            excalidrawState: drawingDataState.excalidrawState,
-            versionFiles: drawingDataState.versionFiles,
-            versionDataState: drawingDataState.versionDataState,
-            imageBase64: drawingDataState.imageBase64,
-            viewBackgroundColor: drawingDataState.viewBackgroundColor,
-          },
-        })
-      );
+      await saveCurrentDrawingToStorage();
     } catch (err) {
       XLogger.error("Failed to save drawing", err);
     } finally {
