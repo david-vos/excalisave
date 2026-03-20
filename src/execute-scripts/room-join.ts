@@ -8,16 +8,8 @@ import {
 import { XLogger } from "../lib/logger";
 import { setLocalStorageItemAndNotify } from "../lib/localStorage.utils";
 import { IdUtils } from "../lib/utils/id.utils";
-import { As } from "../lib/types.utils";
-import type { SaveDrawingMessage, SaveNewDrawingMessage } from "../constants/message.types";
-
-function getToday(): string {
-  const d = new Date();
-  const yyyy = d.getFullYear();
-  const mm = String(d.getMonth() + 1).padStart(2, "0");
-  const dd = String(d.getDate()).padStart(2, "0");
-  return `${yyyy}-${mm}-${dd}`;
-}
+import { getFormattedToday } from "../lib/utils/date.utils";
+import { saveCurrentDrawingToStorage, saveNewDrawingToStorage } from "../lib/utils/drawing-message.utils";
 
 (async () => {
   const roomUrl = window.location.href;
@@ -40,25 +32,7 @@ function getToday(): string {
 
     // Save current drawing, then switch to the existing room drawing
     XLogger.log(`[RoomJoin] Reconnecting to existing drawing "${existing.name}"`);
-    if (currentId) {
-      try {
-        const data = await getDrawingDataState({ takeScreenshot: false });
-        await browser.runtime.sendMessage(
-          As<SaveDrawingMessage>({
-            type: MessageType.SAVE_DRAWING,
-            payload: {
-              id: currentId,
-              excalidraw: data.excalidraw,
-              excalidrawState: data.excalidrawState,
-              versionFiles: data.versionFiles,
-              versionDataState: data.versionDataState,
-            },
-          })
-        );
-      } catch (error) {
-        XLogger.error("[RoomJoin] Error saving current drawing", error);
-      }
-    }
+    await saveCurrentDrawingToStorage({ takeScreenshot: false });
 
     setLocalStorageItemAndNotify(DRAWING_ID_KEY_LS, existing.id);
     setLocalStorageItemAndNotify(DRAWING_TITLE_KEY_LS, existing.name);
@@ -67,46 +41,14 @@ function getToday(): string {
 
   // No existing drawing for this room — create a new one
   XLogger.log("[RoomJoin] Creating new drawing for room session");
-
-  if (currentId) {
-    try {
-      const data = await getDrawingDataState({ takeScreenshot: false });
-      await browser.runtime.sendMessage(
-        As<SaveDrawingMessage>({
-          type: MessageType.SAVE_DRAWING,
-          payload: {
-            id: currentId,
-            excalidraw: data.excalidraw,
-            excalidrawState: data.excalidrawState,
-            versionFiles: data.versionFiles,
-            versionDataState: data.versionDataState,
-          },
-        })
-      );
-    } catch (error) {
-      XLogger.error("[RoomJoin] Error saving current drawing", error);
-    }
-  }
+  await saveCurrentDrawingToStorage({ takeScreenshot: false });
 
   const newId = IdUtils.createDrawingId();
-  const name = `Room - ${getToday()}`;
+  const name = `Room - ${getFormattedToday()}`;
 
   try {
     const data = await getDrawingDataState({ takeScreenshot: false });
-    await browser.runtime.sendMessage(
-      As<SaveNewDrawingMessage>({
-        type: MessageType.SAVE_NEW_DRAWING,
-        payload: {
-          id: newId,
-          name,
-          sync: false,
-          excalidraw: data.excalidraw,
-          excalidrawState: data.excalidrawState,
-          versionFiles: data.versionFiles,
-          versionDataState: data.versionDataState,
-        },
-      })
-    );
+    await saveNewDrawingToStorage(newId, name, data);
 
     // Store the room URL on the drawing
     await browser.runtime.sendMessage({

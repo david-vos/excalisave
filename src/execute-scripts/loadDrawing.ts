@@ -1,13 +1,11 @@
 import {
-  getDrawingDataState,
   getScriptParams,
 } from "../ContentScript/content-script.utils";
-import { MessageType, SaveDrawingMessage } from "../constants/message.types";
 import { IDrawing } from "../interfaces/drawing.interface";
 import { createStore, entries, set } from "idb-keyval";
 import { DRAWING_ID_KEY_LS, DRAWING_TITLE_KEY_LS } from "../lib/constants";
 import { XLogger } from "../lib/logger";
-import { As } from "../lib/types.utils";
+import { saveCurrentDrawingToStorage } from "../lib/utils/drawing-message.utils";
 import { FileId } from "@excalidraw/excalidraw/types/element/types";
 import { BinaryFileData } from "@excalidraw/excalidraw/types/types";
 import { browser } from "webextension-polyfill-ts";
@@ -48,29 +46,8 @@ type ScriptParams = {
   });
 
   // Save data before load new drawing if there is a current drawing
-  const currentDrawingId = localStorage.getItem(DRAWING_ID_KEY_LS);
-
   const url = new URL(window.location.href);
-
-  if (currentDrawingId) {
-    XLogger.info("Saving current drawing before load new drawing");
-    const drawingDataState = await getDrawingDataState();
-
-    await browser.runtime.sendMessage(
-      As<SaveDrawingMessage>({
-        type: MessageType.SAVE_DRAWING,
-        payload: {
-          id: currentDrawingId,
-          excalidraw: drawingDataState.excalidraw,
-          excalidrawState: drawingDataState.excalidrawState,
-          versionFiles: drawingDataState.versionFiles,
-          versionDataState: drawingDataState.versionDataState,
-          imageBase64: drawingDataState.imageBase64,
-          viewBackgroundColor: drawingDataState.viewBackgroundColor,
-        },
-      })
-    );
-  }
+  await saveCurrentDrawingToStorage();
 
   // Load new drawing
   const response = await browser.storage.local.get(loadDrawingId);
