@@ -1,6 +1,6 @@
 import { XLogger } from "../../lib/logger";
 import type { UUID } from "../../lib/utils/id.utils";
-import { GitHubProvider } from "./github-provider.service";
+import { GitHubProvider } from "./gitHubProvider.service";
 import { SyncService } from "../sync.service";
 
 export class GitHubConfigService {

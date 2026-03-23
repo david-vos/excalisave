@@ -1,4 +1,4 @@
-import {getScriptParams} from "../ContentScript/content-script.utils";
+import {getScriptParams} from "../ContentScript/contentScript.utils";
 import {MessageType, SaveNewDrawingMessage} from "../constants/message.types";
 import {DRAWING_ID_KEY_LS, DRAWING_TITLE_KEY_LS} from "../lib/constants";
 import {XLogger} from "../lib/logger";

@@ -5,14 +5,14 @@ import {XLogger} from "../lib/logger";
 import {IdUtils} from "../lib/utils/id.utils";
 import {getDefaultDrawingName} from "../lib/utils/date.utils";
 import {TabUtils} from "../lib/utils/tab.utils";
-import {GitHubConfigService} from "../services/github/github-config.service";
+import {GitHubConfigService} from "../services/github/gitHubConfig.service";
 import {SyncService} from "../services/sync.service";
 import {
     CUSTOM_DOMAINS_KEY,
     getCustomDomains,
     registerContentScriptForCustomDomains,
-} from "./custom-domains.utils";
-import {FragmentHandlerRegistry} from "./url-fragment-handler";
+} from "./customDomains.utils";
+import {FragmentHandlerRegistry} from "./urlFragmentHandler";
 import {searchDrawings} from "../services/search.service";
 
 // Initialize services

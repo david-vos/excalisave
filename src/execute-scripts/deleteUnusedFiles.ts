@@ -1,6 +1,6 @@
 import { BinaryFileData } from "@excalidraw/excalidraw/types/types";
 import { createStore, del, get, keys } from "idb-keyval";
-import { getScriptParams } from "../ContentScript/content-script.utils";
+import { getScriptParams } from "../ContentScript/contentScript.utils";
 import { XLogger } from "../lib/logger";
 
 // Where images are stored: https://github.com/excalidraw/excalidraw/blob/e8def8da8d5fcf9445aebdd996de3fee4cecf7ef/excalidraw-app/data/LocalData.ts#L24

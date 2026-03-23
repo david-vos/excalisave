@@ -59,7 +59,7 @@ module.exports = {
     "execute-scripts/sendDrawingDataToSave": path.join(
       sourcePath,
       "execute-scripts",
-      "send-drawing-data-to-save.ts"
+      "sendDrawingDataToSave.ts"
     ),
     "execute-scripts/loadDrawing": path.join(
       sourcePath,
@@ -74,17 +74,17 @@ module.exports = {
     "execute-scripts/export-store": path.join(
       sourcePath,
       "execute-scripts",
-      "export-store.ts"
+      "exportStore.ts"
     ),
     "execute-scripts/delete-unused-files": path.join(
       sourcePath,
       "execute-scripts",
-      "delete-unused-files.ts"
+      "deleteUnusedFiles.ts"
     ),
     "execute-scripts/load-store": path.join(
       sourcePath,
       "execute-scripts",
-      "load-store.ts"
+      "loadStore.ts"
     ),
     "content-scripts/listenDrawingUpdates": path.join(
       sourcePath,

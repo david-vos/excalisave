@@ -1,5 +1,5 @@
-import { DrawingDataState } from "../interfaces/drawing-data-state.interface";
-import type { ExcalidrawDataState } from "../interfaces/excalidraw-data-state.interface";
+import { DrawingDataState } from "../interfaces/drawingDataState.interface";
+import type { ExcalidrawDataState } from "../interfaces/excalidrawDataState.interface";
 import { XLogger } from "../lib/logger";
 import { convertBlobToBase64Async } from "../lib/utils/blob-to-base64.util";
 import { MAX_WIDTH_THUMBNAIL, MAX_HEIGHT_THUMBNAIL } from "../lib/constants";

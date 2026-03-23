@@ -1,5 +1,5 @@
 import { BinaryFileData } from "@excalidraw/excalidraw/types/types";
-import { DrawingDataState } from "../interfaces/drawing-data-state.interface";
+import { DrawingDataState } from "../interfaces/drawingDataState.interface";
 import { IDrawing } from "../interfaces/drawing.interface";
 import type { UUID } from "../lib/utils/id.utils";
 

@@ -1,7 +1,7 @@
 import {
   getDrawingDataState,
   getScriptParams,
-} from "../ContentScript/content-script.utils";
+} from "../ContentScript/contentScript.utils";
 import {
   MessageType,
   SaveDrawingMessage,

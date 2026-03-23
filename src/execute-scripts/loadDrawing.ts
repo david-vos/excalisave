@@ -1,6 +1,6 @@
 import {
   getScriptParams,
-} from "../ContentScript/content-script.utils";
+} from "../ContentScript/contentScript.utils";
 import { IDrawing } from "../interfaces/drawing.interface";
 import { createStore, entries, set } from "idb-keyval";
 import { DRAWING_ID_KEY_LS, DRAWING_TITLE_KEY_LS } from "../lib/constants";

@@ -27,7 +27,7 @@ import { Placeholder } from "../components/Placeholder/Placeholder.component";
 import { Sidebar } from "../components/Sidebar/Sidebar.component";
 import { IDrawing } from "../interfaces/drawing.interface";
 import { DRAWING_TITLE_KEY_LS } from "../lib/constants";
-import { DrawingStore } from "../lib/drawing-store";
+import { DrawingStore } from "../lib/drawingStore";
 import { XLogger } from "../lib/logger";
 import { TabUtils } from "../lib/utils/tab.utils";
 import { useCurrentDrawingId } from "./hooks/useCurrentDrawing.hook";
@@ -45,7 +45,7 @@ import {
 } from "../constants/message.types";
 import { MergeConflictDialog } from "../components/MergeConflict/MergeConflict.component";
 import { SyncService } from "../services/sync.service";
-import { CustomDomainUtils } from "../lib/custom-domains.utils";
+import { CustomDomainUtils } from "../lib/customDomains.utils";
 import { searchDrawings } from "../services/search.service";
 import type { UUID } from "../lib/utils/id.utils";
 

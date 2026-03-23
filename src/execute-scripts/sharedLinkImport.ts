@@ -2,7 +2,7 @@ import { browser } from "webextension-polyfill-ts";
 import { MessageType } from "../constants/message.types";
 import {
   getDrawingDataState,
-} from "../ContentScript/content-script.utils";
+} from "../ContentScript/contentScript.utils";
 import {
   DRAWING_ID_KEY_LS,
   DRAWING_TITLE_KEY_LS,

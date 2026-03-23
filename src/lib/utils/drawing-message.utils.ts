@@ -1,11 +1,11 @@
 import {browser} from "webextension-polyfill-ts";
 import {MessageType} from "../../constants/message.types";
-import {getDrawingDataState} from "../../ContentScript/content-script.utils";
+import {getDrawingDataState} from "../../ContentScript/contentScript.utils";
 import {DRAWING_ID_KEY_LS} from "../constants";
 import {XLogger} from "../logger";
 import {As} from "../types.utils";
 import type {SaveDrawingMessage, SaveNewDrawingMessage} from "../../constants/message.types";
-import type {DrawingDataState} from "../../interfaces/drawing-data-state.interface";
+import type {DrawingDataState} from "../../interfaces/drawingDataState.interface";
 import type {UUID} from "./id.utils";
 
 type SaveOpts = {
