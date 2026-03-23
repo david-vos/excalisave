@@ -1,4 +1,4 @@
-import { ExcalidrawDataState } from "./excalidraw-data-state.interface";
+import { ExcalidrawDataState } from "./excalidrawDataState.interface";
 
 // Similar to ExcalidrawDataState, with additional data needed for the extension.
 export type DrawingDataState = ExcalidrawDataState & {

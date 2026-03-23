@@ -9,21 +9,12 @@ export type UUID = string;
 
 type IdPrefix = "drawing" | "folder";
 
-const UUID_REGEX =
-  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-
 function generateUUID(): string {
   return crypto.randomUUID();
 }
 
 function createId(prefix: IdPrefix): UUID {
   return `${prefix}${ID_SEPARATOR}${generateUUID()}`;
-}
-
-function isValidIdFormat(id: string, prefix: IdPrefix): boolean {
-  if (!id.startsWith(`${prefix}${ID_SEPARATOR}`)) return false;
-  const uuid = id.slice(prefix.length + ID_SEPARATOR.length);
-  return UUID_REGEX.test(uuid);
 }
 
 export const IdUtils = {
@@ -35,28 +26,4 @@ export const IdUtils = {
     return createId("folder");
   },
 
-  isDrawingId(id: string): boolean {
-    return isValidIdFormat(id, "drawing");
-  },
-
-  isFolderId(id: string): boolean {
-    return isValidIdFormat(id, "folder");
-  },
-
-  /**
-   * Extracts the UUID portion from a prefixed ID.
-   * e.g. "drawing:550e8400-..." -> "550e8400-..."
-   */
-  extractUUID(id: UUID): string {
-    const separatorIndex = id.indexOf(ID_SEPARATOR);
-    return id.slice(separatorIndex + 1);
-  },
-
-  /**
-   * Extracts the prefix from a prefixed ID.
-   * e.g. "drawing:550e8400-..." -> "drawing"
-   */
-  extractPrefix(id: UUID): IdPrefix {
-    return id.slice(0, id.indexOf(ID_SEPARATOR)) as IdPrefix;
-  },
 };

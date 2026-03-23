@@ -3,8 +3,8 @@ import { DRAWING_ID_KEY_LS } from "../lib/constants";
 import { XLogger } from "../lib/logger";
 import { As } from "../lib/types.utils";
 import { waitForElement } from "../lib/utils/wait-for-element.util";
-import { getDrawingDataState } from "./content-script.utils";
-import { initExcalidrawClientUI } from "./excalidraw-client-ui";
+import { getDrawingDataState } from "./contentScript.utils";
+import { initExcalidrawClientUI } from "./excalidrawClientUi";
 import { browser } from "webextension-polyfill-ts";
 
 // ----------- Content Script Cleanup --------------------

@@ -2,7 +2,7 @@ import { browser } from "webextension-polyfill-ts";
 import { MessageType } from "../constants/message.types";
 import {
   getDrawingDataState,
-} from "../ContentScript/content-script.utils";
+} from "../ContentScript/contentScript.utils";
 import {
   DRAWING_ID_KEY_LS,
   DRAWING_TITLE_KEY_LS,
@@ -13,25 +13,15 @@ import {
 } from "../lib/localStorage.utils";
 import { waitForElement } from "../lib/utils/wait-for-element.util";
 import { IdUtils } from "../lib/utils/id.utils";
-import { As } from "../lib/types.utils";
-import type { SaveDrawingMessage, SaveNewDrawingMessage } from "../constants/message.types";
+import { getFormattedToday } from "../lib/utils/date.utils";
+import { saveCurrentDrawingToStorage, saveNewDrawingToStorage } from "../lib/utils/drawing-message.utils";
 
 // ─── Native dialog selectors ───────────────────────────────────────
 // Excalidraw's "Load from link" modal container (matches both .excalidraw.excalidraw-modal-container)
 const MODAL_SELECTOR = ".excalidraw.excalidraw-modal-container";
-// The "Replace my content" button — using the same proven selector pattern as addOverwriteAction.ts
+// The "Replace my content" button
 const REPLACE_BUTTON_SELECTOR =
   ".excalidraw.excalidraw-modal-container .OverwriteConfirm__Description.OverwriteConfirm__Description--color-danger button";
-
-// ─── Helpers ───────────────────────────────────────────────────────
-
-function getToday(): string {
-  const d = new Date();
-  const yyyy = d.getFullYear();
-  const mm = String(d.getMonth() + 1).padStart(2, "0");
-  const dd = String(d.getDate()).padStart(2, "0");
-  return `${yyyy}-${mm}-${dd}`;
-}
 
 function clickReplaceMyContent(): boolean {
   const btn = document.querySelector<HTMLButtonElement>(REPLACE_BUTTON_SELECTOR);
@@ -42,67 +32,21 @@ function clickReplaceMyContent(): boolean {
 
 // ─── Actions ───────────────────────────────────────────────────────
 
-async function saveCurrentDrawing(): Promise<boolean> {
-  const currentId = localStorage.getItem(DRAWING_ID_KEY_LS);
-  if (!currentId) return true; // nothing to save
-
-  try {
-    const data = await getDrawingDataState();
-    const result = await browser.runtime.sendMessage(
-      As<SaveDrawingMessage>({
-        type: MessageType.SAVE_DRAWING,
-        payload: {
-          id: currentId,
-          excalidraw: data.excalidraw,
-          excalidrawState: data.excalidrawState,
-          versionFiles: data.versionFiles,
-          versionDataState: data.versionDataState,
-          imageBase64: data.imageBase64,
-          viewBackgroundColor: data.viewBackgroundColor,
-        },
-      })
-    );
-    return result?.success ?? false;
-  } catch (error) {
-    XLogger.error("[SharedLinkImport] Error saving current drawing", error);
-    return false;
-  }
-}
-
 async function handleCreateNew(name: string): Promise<void> {
   // 1. Save current drawing
-  await saveCurrentDrawing();
+  await saveCurrentDrawingToStorage();
 
-  // 2. Create new drawing ID
+  // 2. Create new drawing ID and save initial record
   const newId = IdUtils.createDrawingId();
-
-  // 3. Get current drawing data to create the initial record
-  //    (auto-save needs the drawing to exist in storage before it can update it)
   const data = await getDrawingDataState();
-  await browser.runtime.sendMessage(
-    As<SaveNewDrawingMessage>({
-      type: MessageType.SAVE_NEW_DRAWING,
-      payload: {
-        id: newId,
-        name,
-        sync: false,
-        excalidraw: data.excalidraw,
-        excalidrawState: data.excalidrawState,
-        versionFiles: data.versionFiles,
-        versionDataState: data.versionDataState,
-        imageBase64: data.imageBase64,
-        viewBackgroundColor: data.viewBackgroundColor,
-      },
-    })
-  );
+  await saveNewDrawingToStorage(newId, name, data);
 
-  // 4. Set new drawing ID in localStorage BEFORE clicking replace
+  // 3. Set new drawing ID in localStorage BEFORE clicking replace
   //    so auto-save (2s polling) associates future changes with this drawing
   setLocalStorageItemAndNotify(DRAWING_ID_KEY_LS, newId);
   setLocalStorageItemAndNotify(DRAWING_TITLE_KEY_LS, name);
 
-  // 5. Click "Replace my content" — shared data loads into canvas
-  //    Auto-save will update the drawing with the imported content on its next cycle
+  // 4. Click "Replace my content" — shared data loads into canvas
   if (!clickReplaceMyContent()) {
     XLogger.error("[SharedLinkImport] Replace button not found");
     showNativeDialog();
@@ -118,7 +62,7 @@ async function handleOverrideCurrent(): Promise<void> {
 
 async function handleOverrideExisting(drawingId: string, drawingName: string): Promise<void> {
   // Save current drawing before switching
-  await saveCurrentDrawing();
+  await saveCurrentDrawingToStorage();
 
   // Set the selected drawing as current
   setLocalStorageItemAndNotify(DRAWING_ID_KEY_LS, drawingId);
@@ -236,7 +180,7 @@ function createOverlayDialog(): void {
 
   const nameInput = document.createElement("input");
   nameInput.type = "text";
-  nameInput.value = `Shared drawing - ${getToday()}`;
+  nameInput.value = `Shared drawing - ${getFormattedToday()}`;
   Object.assign(nameInput.style, {
     width: "100%",
     padding: "8px 12px",
@@ -333,7 +277,7 @@ function createOverlayDialog(): void {
   const btnCreate = makeButton("Create new drawing", colorPrimary, "#fff");
   btnCreate.addEventListener("click", async () => {
     removeOverlay();
-    await handleCreateNew(nameInput.value || `Shared drawing - ${getToday()}`);
+    await handleCreateNew(nameInput.value || `Shared drawing - ${getFormattedToday()}`);
   });
   buttonsContainer.appendChild(btnCreate);
 

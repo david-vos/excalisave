@@ -86,15 +86,6 @@
       "css": [
         "css/content-scripts/listenDrawingUpdates.css"
       ]
-    },
-    {
-      "matches": [
-        "https://excalidraw.com/*"
-      ],
-      "js": [
-        "js/content-scripts/addOverwriteAction.bundle.js"
-      ],
-      "run_at": "document_idle"
     }
   ]
 }

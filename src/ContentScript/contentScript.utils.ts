@@ -1,5 +1,5 @@
-import { DrawingDataState } from "../interfaces/drawing-data-state.interface";
-import type { ExcalidrawDataState } from "../interfaces/excalidraw-data-state.interface";
+import { DrawingDataState } from "../interfaces/drawingDataState.interface";
+import type { ExcalidrawDataState } from "../interfaces/excalidrawDataState.interface";
 import { XLogger } from "../lib/logger";
 import { convertBlobToBase64Async } from "../lib/utils/blob-to-base64.util";
 import { MAX_WIDTH_THUMBNAIL, MAX_HEIGHT_THUMBNAIL } from "../lib/constants";
@@ -94,72 +94,6 @@ async function takeScreenshot(): Promise<string> {
 export function getExcalidrawDataState(): ExcalidrawDataState {
   const excalidraw = localStorage.getItem("excalidraw");
   const excalidrawState = localStorage.getItem("excalidraw-state");
-  const versionFiles = localStorage.getItem("version-files");
-  const versionDataState = localStorage.getItem("version-dataState");
-
-  return {
-    excalidraw,
-    excalidrawState,
-    versionFiles,
-    versionDataState,
-  };
-}
-
-export function getExcalidrawEmptyDataState(): ExcalidrawDataState {
-  const excalidraw = "[]";
-  const excalidrawState = JSON.stringify({
-    showWelcomeScreen: false,
-    theme: "light",
-    currentChartType: "bar",
-    currentItemBackgroundColor: "transparent",
-    currentItemEndArrowhead: "arrow",
-    currentItemFillStyle: "solid",
-    currentItemFontFamily: 1,
-    currentItemFontSize: 20,
-    currentItemOpacity: 100,
-    currentItemRoughness: 1,
-    currentItemStartArrowhead: null,
-    currentItemStrokeColor: "#1e1e1e",
-    currentItemRoundness: "round",
-    currentItemStrokeStyle: "solid",
-    currentItemStrokeWidth: 2,
-    currentItemTextAlign: "left",
-    cursorButton: "up",
-    editingGroupId: null,
-    activeTool: {
-      type: "selection",
-      customType: null,
-      locked: false,
-      lastActiveTool: null,
-    },
-    penMode: true,
-    penDetected: true,
-    exportBackground: true,
-    exportScale: 1,
-    exportEmbedScene: false,
-    exportWithDarkMode: false,
-    gridSize: null,
-    defaultSidebarDockedPreference: false,
-    lastPointerDownWith: "mouse",
-    name: "Untitled-2023-11-04-1725",
-    openMenu: null,
-    openSidebar: null,
-    previousSelectedElementIds: {},
-    scrolledOutside: false,
-    scrollX: 0,
-    scrollY: 0,
-    selectedElementIds: {},
-    selectedGroupIds: {},
-    shouldCacheIgnoreZoom: false,
-    showStats: false,
-    viewBackgroundColor: "#ffffff",
-    zenModeEnabled: false,
-    zoom: {
-      value: 1,
-    },
-    selectedLinearElement: null,
-    objectsSnapModeEnabled: false,
-  });
   const versionFiles = localStorage.getItem("version-files");
   const versionDataState = localStorage.getItem("version-dataState");
 

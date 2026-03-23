@@ -1,6 +1,6 @@
 import React from "react";
 import { DrawingTitle } from "./components/DrawingTitle/DrawingTitle.component";
-import { mountReactComponent } from "./utils/mount-react-component";
+import { mountReactComponent } from "./utils/mountReactComponent";
 
 export function initExcalidrawClientUI() {
   const appMenuTopLeft = document.getElementsByClassName(

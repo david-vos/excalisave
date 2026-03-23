@@ -1,4 +1,4 @@
-import { RestorePoint } from "../../interfaces/restore-point.interface";
+import { RestorePoint } from "../../interfaces/restorePoint.interface";
 import { browser } from "webextension-polyfill-ts";
 
 const restorePointKey = "restorePoint";

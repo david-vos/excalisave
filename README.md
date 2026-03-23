@@ -1,9 +1,9 @@
-Attempting to recover my mozzila account due to loss of 2FA 
-3878b3be90a54f1a94fe70f1e16af534
-
 <p align="center"><img width="64px" alt="Icon" src="./src/assets/icons/128.png"></p>
 <h1 align="center">Excalisave</h1>
 <p align="center">Save your Excalidraw drawings</p>
+
+> [!NOTE]
+> This is a fork of the original [Excalisave](https://github.com/atharvakadlag/excalisave) by [@atharvakadlag](https://github.com/atharvakadlag). All credit for the original extension goes to them. Please check out the original repo for more context and to show your support!
 
 ## ✨ Features
 

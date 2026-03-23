@@ -1,6 +1,6 @@
 import { Tabs, browser } from "webextension-polyfill-ts";
 import { CustomDomain } from "../background/background.interfaces";
-import { CUSTOM_DOMAINS_KEY } from "../background/custom-domains.utils";
+import { CUSTOM_DOMAINS_KEY } from "../background/customDomains.utils";
 
 export class CustomDomainUtils {
   static async getCustomDomains(): Promise<CustomDomain[]> {

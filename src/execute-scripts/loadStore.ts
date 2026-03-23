@@ -1,9 +1,7 @@
 import { BinaryFileData } from "@excalidraw/excalidraw/types/types";
 import { createStore, keys, set, update } from "idb-keyval";
-import { getScriptParams } from "../ContentScript/content-script.utils";
+import { getScriptParams } from "../ContentScript/contentScript.utils";
 import { XLogger } from "../lib/logger";
-import { browser } from "webextension-polyfill-ts";
-import { MessageType } from "../constants/message.types";
 
 // Where images are stored: https://github.com/excalidraw/excalidraw/blob/e8def8da8d5fcf9445aebdd996de3fee4cecf7ef/excalidraw-app/data/LocalData.ts#L24
 const filesStore = createStore("files-db", "files-store");
@@ -52,10 +50,7 @@ type ScriptParams = {
 
     XLogger.debug("Files added to IndexedDB");
   } catch (error) {
-    await browser.runtime.sendMessage({
-      type: MessageType.ERROR_LOADING_STORE,
-      payload: error,
-    });
+    XLogger.error("Error loading store", error);
   } finally {
     // Close tab finish import
     window.close();
