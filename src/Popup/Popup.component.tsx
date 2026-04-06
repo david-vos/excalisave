@@ -297,22 +297,14 @@ const Popup: React.FC = () => {
     const isSameDrawing = loadDrawingId === currentDrawing?.id;
     if (!loading && (isLiveCollaboration || !isSameDrawing)) {
       startLoading();
-      const activeTab = await TabUtils.getActiveTab();
 
-      if (!activeTab) {
-        XLogger.error("Error loading drawing: No active tab or drawing found", {
-          activeTab,
-        });
-
-        return;
-      }
-
-      await DrawingStore.loadDrawing(loadDrawingId);
+      await browser.runtime.sendMessage({
+        type: MessageType.LOAD_DRAWING,
+        payload: { id: loadDrawingId },
+      });
 
       setCurrentDrawingId(loadDrawingId);
       setIsLiveCollaboration(false);
-      // TODO: Activate this to avoid fast switching errors(or block switching for a few milis)
-      // window.close();
     }
   };
 
@@ -386,9 +378,7 @@ const Popup: React.FC = () => {
   );
 
   const handleLoadItemWithConfirm = async (loadDrawingId: string) => {
-    if (!inExcalidrawPage) return;
-
-    if (!currentDrawing && (await DrawingStore.hasUnsavedChanges())) {
+    if (inExcalidrawPage && !currentDrawing && (await DrawingStore.hasUnsavedChanges())) {
       drawingIdToSwitch.current = loadDrawingId;
       setIsConfirmSwitchDialogOpen(true);
     } else {
