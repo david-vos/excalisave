@@ -410,30 +410,46 @@ browser.runtime.onMessage.addListener(
                     }
 
                     if (!loadTabId) {
-                        // No excalidraw tab available — open one
-                        const result = await browser.storage.local.get(drawingId);
-                        const drawingData = result[drawingId] as IDrawing | undefined;
-                        const url = drawingData?.roomUrl || "https://excalidraw.com";
-
-                        const newTab = await browser.tabs.create({url});
-
-                        // Room URLs load directly, no script injection needed
-                        if (drawingData?.roomUrl) {
-                            return {success: true};
+                        // Check if any existing tab is already on an excalidraw page
+                        const excalidrawTabs = await browser.tabs.query({url: "https://excalidraw.com/*"});
+                        for (const origin of cachedCustomDomainOrigins) {
+                            const customTabs = await browser.tabs.query({url: `${origin}/*`});
+                            excalidrawTabs.push(...customTabs);
                         }
 
-                        // Wait for the new tab to finish loading
-                        await new Promise<void>((resolve) => {
-                            const listener = (tabId: number, changeInfo: {status?: string}) => {
-                                if (tabId === newTab.id && changeInfo.status === "complete") {
-                                    browser.tabs.onUpdated.removeListener(listener);
-                                    resolve();
-                                }
-                            };
-                            browser.tabs.onUpdated.addListener(listener);
-                        });
+                        if (excalidrawTabs.length > 0 && excalidrawTabs[0].id) {
+                            // Reuse existing excalidraw tab — focus it
+                            loadTabId = excalidrawTabs[0].id;
+                            await browser.tabs.update(loadTabId, {active: true});
+                            if (excalidrawTabs[0].windowId) {
+                                await browser.windows.update(excalidrawTabs[0].windowId, {focused: true});
+                            }
+                        } else {
+                            // No excalidraw tab exists — open one
+                            const result = await browser.storage.local.get(drawingId);
+                            const drawingData = result[drawingId] as IDrawing | undefined;
+                            const url = drawingData?.roomUrl || "https://excalidraw.com";
 
-                        loadTabId = newTab.id;
+                            const newTab = await browser.tabs.create({url});
+
+                            // Room URLs load directly, no script injection needed
+                            if (drawingData?.roomUrl) {
+                                return {success: true};
+                            }
+
+                            // Wait for the new tab to finish loading
+                            await new Promise<void>((resolve) => {
+                                const listener = (tabId: number, changeInfo: {status?: string}) => {
+                                    if (tabId === newTab.id && changeInfo.status === "complete") {
+                                        browser.tabs.onUpdated.removeListener(listener);
+                                        resolve();
+                                    }
+                                };
+                                browser.tabs.onUpdated.addListener(listener);
+                            });
+
+                            loadTabId = newTab.id;
+                        }
                     }
 
                     await browser.scripting.executeScript({
