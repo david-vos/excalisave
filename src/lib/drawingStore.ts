@@ -38,30 +38,6 @@ export class DrawingStore {
     });
   }
 
-  static async loadDrawing(drawingId: UUID) {
-    const activeTab = await TabUtils.getActiveTab();
-
-    if (!activeTab) {
-      XLogger.warn("No active tab found");
-
-      return;
-    }
-
-    // This workaround is to pass params to script, it's ugly but it works
-    await browser.scripting.executeScript({
-      target: { tabId: activeTab.id },
-      func: (drawingId) => {
-        window.__SCRIPT_PARAMS__ = { id: drawingId };
-      },
-      args: [drawingId],
-    });
-
-    await browser.scripting.executeScript({
-      target: { tabId: activeTab.id },
-      files: ["./js/execute-scripts/loadDrawing.bundle.js"],
-    });
-  }
-
   static async newDrawing() {
     const activeTab = await TabUtils.getActiveTab();
 
